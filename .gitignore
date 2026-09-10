@@ -1,0 +1,20 @@
+# Dependencies
+/node_modules
+/vendor
+
+# Build output
+/dist
+
+# Package archives
+*.tgz
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local environment
+.env
+.env.*
+!.env.example

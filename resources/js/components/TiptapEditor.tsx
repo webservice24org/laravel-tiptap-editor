@@ -1,0 +1,282 @@
+import {
+    useEffect,
+    useMemo,
+    useState,
+} from 'react'
+
+import {
+    EditorContent,
+    useEditor,
+} from '@tiptap/react'
+
+import EditorToolbar
+    from './toolbar/EditorToolbar'
+
+import CodeEditor
+    from './CodeEditor'
+
+import {
+    createEditorExtensions,
+} from '../extensions/editorExtensions'
+
+import {
+    sanitizeEditorHtml,
+} from '../utils/sanitizeHtml'
+
+import type {
+    EditorMode,
+    TiptapEditorProps,
+} from '../types/editor'
+
+import '../../css/editor.css'
+
+export default function TiptapEditor({
+    value = '',
+    onChange,
+    minHeight = 300,
+    imageUploadUrl,
+    onImageUpload,
+    onNewsSearch,
+}: TiptapEditorProps) {
+    const [
+        mode,
+        setMode,
+    ] =
+        useState<EditorMode>(
+            'visual'
+        )
+
+    const [
+        sourceHtml,
+        setSourceHtml,
+    ] =
+        useState(
+            sanitizeEditorHtml(
+                value
+            )
+        )
+
+    const extensions =
+        useMemo(
+            () =>
+                createEditorExtensions({
+                    imageUploadUrl,
+                    onImageUpload,
+                }),
+            [
+                imageUploadUrl,
+                onImageUpload,
+            ]
+        )
+
+    const editor =
+        useEditor({
+            extensions,
+
+            content:
+                sanitizeEditorHtml(
+                    value
+                ),
+
+            editorProps: {
+                attributes: {
+                    class:
+                        'mw-tiptap-content',
+
+                    style:
+                        `min-height: ${minHeight}px`,
+                },
+            },
+
+            onUpdate: ({
+                editor:
+                    currentEditor,
+            }) => {
+                if (
+                    mode !==
+                    'visual'
+                ) {
+                    return
+                }
+
+                const html =
+                    sanitizeEditorHtml(
+                        currentEditor
+                            .getHTML()
+                    )
+
+                setSourceHtml(
+                    html
+                )
+
+                onChange?.(
+                    html
+                )
+            },
+        })
+
+    useEffect(() => {
+        if (
+            !editor ||
+            mode ===
+                'code'
+        ) {
+            return
+        }
+
+        const cleanValue =
+            sanitizeEditorHtml(
+                value
+            )
+
+        const currentHtml =
+            sanitizeEditorHtml(
+                editor.getHTML()
+            )
+
+        if (
+            cleanValue !==
+            currentHtml
+        ) {
+            editor.commands.setContent(
+                cleanValue,
+                {
+                    emitUpdate:
+                        false,
+                }
+            )
+
+            setSourceHtml(
+                cleanValue
+            )
+        }
+    }, [
+        editor,
+        mode,
+        value,
+    ])
+
+    if (!editor) {
+        return null
+    }
+
+    const switchMode = (
+        nextMode: EditorMode
+    ) => {
+        if (
+            nextMode ===
+            mode
+        ) {
+            return
+        }
+
+        if (
+            nextMode ===
+            'code'
+        ) {
+            const cleanHtml =
+                sanitizeEditorHtml(
+                    editor.getHTML()
+                )
+
+            setSourceHtml(
+                cleanHtml
+            )
+
+            setMode(
+                'code'
+            )
+
+            return
+        }
+
+        const cleanHtml =
+            sanitizeEditorHtml(
+                sourceHtml
+            )
+
+        editor.commands.setContent(
+            cleanHtml,
+            {
+                emitUpdate:
+                    false,
+            }
+        )
+
+        const normalizedHtml =
+            sanitizeEditorHtml(
+                editor.getHTML()
+            )
+
+        setSourceHtml(
+            normalizedHtml
+        )
+
+        onChange?.(
+            normalizedHtml
+        )
+
+        setMode(
+            'visual'
+        )
+    }
+
+    const handleSourceChange = (
+        html: string
+    ) => {
+        setSourceHtml(
+            html
+        )
+    }
+
+    return (
+        <div
+            className="mw-tiptap-editor"
+            data-editor-mode={
+                mode
+            }
+        >
+            <EditorToolbar
+                editor={
+                    editor
+                }
+                imageUploadUrl={
+                    imageUploadUrl
+                }
+                onImageUpload={
+                    onImageUpload
+                }
+                onNewsSearch={
+                    onNewsSearch
+                }
+                mode={
+                    mode
+                }
+                onModeChange={
+                    switchMode
+                }
+            />
+
+            {mode ===
+            'visual' ? (
+                <EditorContent
+                    editor={
+                        editor
+                    }
+                />
+            ) : (
+                <CodeEditor
+                    value={
+                        sourceHtml
+                    }
+                    onChange={
+                        handleSourceChange
+                    }
+                    minHeight={
+                        minHeight
+                    }
+                />
+            )}
+        </div>
+    )
+}
