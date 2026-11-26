@@ -68,8 +68,8 @@ test('toggle button reports false and true; action buttons may omit pressed stat
 });
 test('script marks exclude one another in the shared extension factory',()=>{
     const source=actual.files['extensions/editorExtensions.ts'];const factory=source.helpers.find(h=>h.name==='createEditorExtensions').expression;
-    assert.match(factory,/Subscript\.extend\(\{ excludes: 'superscript' \}\)/);
-    assert.match(factory,/Superscript\.extend\(\{ excludes: 'subscript' \}\)/);
+    assert.match(factory,/Subscript\.extend\(\{\s*excludes: 'superscript',/);
+    assert.match(factory,/Superscript\.extend\(\{\s*excludes: 'subscript',/);
 });
 
 // Execute the actual isolated toolbar helpers with an instrumented command-chain
@@ -86,9 +86,9 @@ function scriptFixture({editable=true,destroyed=false,allowed=true}={}) {
         constructor(args){assert.equal(args.editor,editor);}
         createChain(tr){assert.equal(tr,transaction);calls.push('scratch:chain');return chain('scratch');}
     }
-    const source=actual.files[main].helpers.filter(h=>['scriptChain','canToggleScript','applyScript'].includes(h.name));
+    const source=actual.files['extensions/editorExtensions.ts'].helpers.filter(h=>['scriptChain','canToggleScript','applyScript'].includes(h.name));
     assert.equal(source.length,3);
-    const js=ts.transpileModule(source.map(h=>h.expression).join('\n'),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
+    const js=ts.transpileModule(source.map(h=>h.expression.replace(/^export /,'')).join('\n'),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
     const context=vm.createContext({CommandManager});vm.runInContext(js,context);
     return {calls,editor,can:mark=>context.canToggleScript(editor,mark),apply:mark=>context.applyScript(editor,mark)};
 }
@@ -171,3 +171,18 @@ test('three preset dropdowns are reactive and guarded',()=>{const c=actual.files
 test('link action is reactive and preserves mouse selection',()=>{const controls=actual.files[main].controls;const link=controls.find(c=>c.label==='Insert or Edit Link');assert.equal(link.active,'formatting.link');assert.equal(link.disabled,'!formatting.canLink');assert.match(link.mouseDown,/preventDefault/);assert.match(link.handler,/canEditLink/)});
 test('link dialog captures range and rejects changed document',()=>{const h=actual.files['components/dialogs/LinkDialog.tsx'].helpers;assert.match(h.find(x=>x.name==='captureLinkSelection').expression,/getMarkRange/);for(const name of ['handleInsert','handleRemove'])assert.match(h.find(x=>x.name===name).expression,/editor.state.doc !== snapshot.doc/)});
 test('preset marks render only approved values',()=>{const h=actual.files['extensions/editorExtensions.ts'].helpers;assert.match(h.find(x=>x.name==='presetMark').expression,/isTextPreset\(property, value\)/);for(const mark of ['mwTextColor','mwFontSize','mwFontFamily'])assert.ok(h.find(x=>x.name==='createEditorExtensions').expression.includes(mark))});
+
+function historyFixture({editable=true,destroyed=false,allowed=true}={}) {
+    const calls=[];
+    const chain={focus(){calls.push('focus');return this},undo(){calls.push('undo');return this},redo(){calls.push('redo');return this},run(){calls.push('run');return true}};
+    const editor={isEditable:editable,isDestroyed:destroyed,can(){return {undo(){calls.push('canUndo');return allowed},redo(){calls.push('canRedo');return allowed}}},chain(){calls.push('chain');return chain}};
+    const source=actual.files[main].helpers.filter(h=>['canHistoryAction','applyHistoryAction'].includes(h.name));assert.equal(source.length,2);
+    const context=vm.createContext({});vm.runInContext(ts.transpileModule(source.map(h=>h.expression).join('\n'),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText,context);
+    return {calls,apply:action=>context.applyHistoryAction(editor,action),can:action=>context.canHistoryAction(editor,action)};
+}
+test('history controls subscribe to native capability',()=>{for(const name of ['Undo','Redo']){const c=actual.files[main].controls.find(c=>c.label===name);assert.equal(c.disabled,'!formatting.can'+name);assert.match(c.handler,/applyHistoryAction/);assert.match(c.mouseDown,/preventDefault/);assert.ok(actual.files[main].subscriptions.some(s=>s.includes(`can${name}: canHistoryAction(currentEditor, '${name.toLowerCase()}')`)))}});
+test('history capability does not dispatch or focus',()=>{const f=historyFixture();assert.equal(f.can('undo'),true);assert.equal(f.can('redo'),true);assert.deepEqual(f.calls,['canUndo','canRedo'])});
+test('history action checks availability then executes once',()=>{for(const action of ['undo','redo']){const f=historyFixture();assert.equal(f.apply(action),true);assert.deepEqual(f.calls,[action==='undo'?'canUndo':'canRedo','chain','focus',action,'run'])}});
+test('unavailable history action never executes',()=>{const f=historyFixture({allowed:false});assert.equal(f.apply('undo'),false);assert.equal(f.apply('redo'),false);assert.deepEqual(f.calls,['canUndo','canRedo'])});
+test('read-only and destroyed editors never probe history',()=>{for(const opts of [{editable:false},{destroyed:true}]){const f=historyFixture(opts);assert.equal(f.apply('undo'),false);assert.equal(f.apply('redo'),false);assert.deepEqual(f.calls,[])}});
+test('script shortcuts share guarded toolbar action and retain exclusions',()=>{const h=actual.files['extensions/editorExtensions.ts'].helpers.find(x=>x.name==='createEditorExtensions').expression;assert.match(h,/excludes: 'superscript',[\s\S]*?'Mod-,': \(\) => applyScript\(this.editor, 'subscript'\)/);assert.match(h,/excludes: 'subscript',[\s\S]*?'Mod-\.': \(\) => applyScript\(this.editor, 'superscript'\)/)});

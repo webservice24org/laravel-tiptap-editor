@@ -1,4 +1,4 @@
-import { Mark } from '@tiptap/core'
+import { Mark, CommandManager, type Editor, type ChainedCommands } from '@tiptap/core'
 import { isTextPreset, normalizeLinkUrl, type TextPresetProperty } from '../utils/sanitizeHtml'
 
 import StarterKit
@@ -38,6 +38,32 @@ import CustomTableHeader
 import type {
     EditorExtensionOptions,
 } from '../types/editor'
+
+type ScriptMark = 'subscript' | 'superscript'
+
+// Use the same ordering for the capability probe and the actual action.
+// The opposing mark must be removed before the target's ordinary toggle.
+function scriptChain(chain: ChainedCommands, mark: ScriptMark) {
+    return mark === 'subscript'
+        ? chain.unsetSuperscript().toggleSubscript()
+        : chain.unsetSubscript().toggleSuperscript()
+}
+
+export function canToggleScript(editor: Editor, mark: ScriptMark): boolean {
+    if (!editor.isEditable || editor.isDestroyed) return false
+
+    // Tiptap 3.32.0 can() suppresses mutations, so a normal can().chain()
+    // cannot model removal of an excluding mark. An explicit start transaction
+    // lets CommandManager run mark commands without dispatching to the view.
+    // No focus command, plugin dispatch, or document update is used in this probe.
+    const scratch = new CommandManager({ editor }).createChain(editor.state.tr)
+    return scriptChain(scratch, mark).run()
+}
+
+export function applyScript(editor: Editor, mark: ScriptMark): boolean {
+    if (!canToggleScript(editor, mark)) return false
+    return scriptChain(editor.chain().focus(), mark).run()
+}
 
 function presetMark(name: string, property: TextPresetProperty) {
     return Mark.create({
@@ -114,9 +140,19 @@ export function createEditorExtensions({
         }),
 
         // Both marks are installed together; one baseline position per character.
-        Subscript.extend({ excludes: 'superscript' }),
+        Subscript.extend({
+            excludes: 'superscript',
+            addKeyboardShortcuts() {
+                return { 'Mod-,': () => applyScript(this.editor, 'subscript') }
+            },
+        }),
 
-        Superscript.extend({ excludes: 'subscript' }),
+        Superscript.extend({
+            excludes: 'subscript',
+            addKeyboardShortcuts() {
+                return { 'Mod-.': () => applyScript(this.editor, 'superscript') }
+            },
+        }),
 
         ImageFigure.configure({
             imageUploadUrl,

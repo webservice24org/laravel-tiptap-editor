@@ -3,8 +3,8 @@
   "files": {
     "components/toolbar/EditorToolbar.tsx": {
       "chains": [
-        "scriptChain(scratch, mark).run()",
-        "scriptChain(editor.chain().focus(), mark).run()",
+        "chain.undo().run()",
+        "chain.redo().run()",
         "chain.toggleBulletList().run()",
         "chain.toggleOrderedList().run()",
         "chain.sinkListItem('listItem').run()",
@@ -20,25 +20,19 @@
         "editor\n                                .chain()\n                                .focus()\n                                .toggleStrike()\n                                .run()",
         "editor.chain().focus().unsetLink().run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleBlockquote()\n                                .run()",
-        "editor\n                                .chain()\n                                .focus()\n                                .setHorizontalRule()\n                                .run()",
-        "editor\n                                .chain()\n                                .focus()\n                                .undo()\n                                .run()",
-        "editor\n                                .chain()\n                                .focus()\n                                .redo()\n                                .run()"
+        "editor\n                                .chain()\n                                .focus()\n                                .setHorizontalRule()\n                                .run()"
       ],
       "subscriptions": [
-        "useEditorState({\n        editor,\n        selector: ({ editor: currentEditor }) => ({\n            isInsideTable: currentEditor.isActive('table'),\n            bold: currentEditor.isActive('bold'),\n            canBold: currentEditor.isEditable && currentEditor.can().toggleBold(),\n            italic: currentEditor.isActive('italic'),\n            canItalic: currentEditor.isEditable && currentEditor.can().toggleItalic(),\n            underline: currentEditor.isActive('underline'),\n            canUnderline: currentEditor.isEditable && currentEditor.can().toggleUnderline(),\n            strike: currentEditor.isActive('strike'),\n            canStrike: currentEditor.isEditable && currentEditor.can().toggleStrike(),\n            subscript: currentEditor.isActive('subscript'),\n            canSubscript: canToggleScript(currentEditor, 'subscript'),\n            superscript: currentEditor.isActive('superscript'),\n            canSuperscript: canToggleScript(currentEditor, 'superscript'),\n            bulletList: currentEditor.isActive('bulletList'),\n            orderedList: currentEditor.isActive('orderedList'),\n            canBulletList: canListAction(currentEditor, 'bullet'),\n            canOrderedList: canListAction(currentEditor, 'ordered'),\n            canIndentList: canListAction(currentEditor, 'indent'),\n            canOutdentList: canListAction(currentEditor, 'outdent'),\n            alignLeft: currentEditor.isActive({ textAlign: 'left' }),\n            alignCenter: currentEditor.isActive({ textAlign: 'center' }),\n            alignRight: currentEditor.isActive({ textAlign: 'right' }),\n            alignJustify: currentEditor.isActive({ textAlign: 'justify' }),\n            canAlignLeft: canAlignSelection(currentEditor, 'left'),\n            canAlignCenter: canAlignSelection(currentEditor, 'center'),\n            canAlignRight: canAlignSelection(currentEditor, 'right'),\n            canAlignJustify: canAlignSelection(currentEditor, 'justify'),\n            link: currentEditor.isActive('link'),\n            canLink: canEditLink(currentEditor),\n            canUnlink: currentEditor.isEditable && currentEditor.isActive('link') && currentEditor.can().unsetLink(),\n            textColor: presetValue(currentEditor, 'mwTextColor'),\n            fontSize: presetValue(currentEditor, 'mwFontSize'),\n            fontFamily: presetValue(currentEditor, 'mwFontFamily'),\n            canTextColor: canSetPreset(currentEditor, 'mwTextColor'),\n            canFontSize: canSetPreset(currentEditor, 'mwFontSize'),\n            canFontFamily: canSetPreset(currentEditor, 'mwFontFamily'),\n            blockquote: currentEditor.isActive('blockquote'),\n            canBlockquote: currentEditor.isEditable && currentEditor.can().toggleBlockquote(),\n            canHorizontalRule: currentEditor.isEditable && currentEditor.can().setHorizontalRule(),\n            canClear: currentEditor.isEditable && currentEditor.can().chain().clearNodes().unsetAllMarks().run(),\n        }),\n    })"
+        "useEditorState({\n        editor,\n        selector: ({ editor: currentEditor }) => ({\n            isInsideTable: currentEditor.isActive('table'),\n            bold: currentEditor.isActive('bold'),\n            canBold: currentEditor.isEditable && currentEditor.can().toggleBold(),\n            italic: currentEditor.isActive('italic'),\n            canItalic: currentEditor.isEditable && currentEditor.can().toggleItalic(),\n            underline: currentEditor.isActive('underline'),\n            canUnderline: currentEditor.isEditable && currentEditor.can().toggleUnderline(),\n            strike: currentEditor.isActive('strike'),\n            canStrike: currentEditor.isEditable && currentEditor.can().toggleStrike(),\n            subscript: currentEditor.isActive('subscript'),\n            canSubscript: canToggleScript(currentEditor, 'subscript'),\n            superscript: currentEditor.isActive('superscript'),\n            canSuperscript: canToggleScript(currentEditor, 'superscript'),\n            bulletList: currentEditor.isActive('bulletList'),\n            orderedList: currentEditor.isActive('orderedList'),\n            canBulletList: canListAction(currentEditor, 'bullet'),\n            canOrderedList: canListAction(currentEditor, 'ordered'),\n            canIndentList: canListAction(currentEditor, 'indent'),\n            canOutdentList: canListAction(currentEditor, 'outdent'),\n            alignLeft: currentEditor.isActive({ textAlign: 'left' }),\n            alignCenter: currentEditor.isActive({ textAlign: 'center' }),\n            alignRight: currentEditor.isActive({ textAlign: 'right' }),\n            alignJustify: currentEditor.isActive({ textAlign: 'justify' }),\n            canAlignLeft: canAlignSelection(currentEditor, 'left'),\n            canAlignCenter: canAlignSelection(currentEditor, 'center'),\n            canAlignRight: canAlignSelection(currentEditor, 'right'),\n            canAlignJustify: canAlignSelection(currentEditor, 'justify'),\n            link: currentEditor.isActive('link'),\n            canLink: canEditLink(currentEditor),\n            canUnlink: currentEditor.isEditable && currentEditor.isActive('link') && currentEditor.can().unsetLink(),\n            textColor: presetValue(currentEditor, 'mwTextColor'),\n            fontSize: presetValue(currentEditor, 'mwFontSize'),\n            fontFamily: presetValue(currentEditor, 'mwFontFamily'),\n            canTextColor: canSetPreset(currentEditor, 'mwTextColor'),\n            canFontSize: canSetPreset(currentEditor, 'mwFontSize'),\n            canFontFamily: canSetPreset(currentEditor, 'mwFontFamily'),\n            blockquote: currentEditor.isActive('blockquote'),\n            canBlockquote: currentEditor.isEditable && currentEditor.can().toggleBlockquote(),\n            canHorizontalRule: currentEditor.isEditable && currentEditor.can().setHorizontalRule(),\n            canUndo: canHistoryAction(currentEditor, 'undo'),\n            canRedo: canHistoryAction(currentEditor, 'redo'),\n            canClear: currentEditor.isEditable && currentEditor.can().chain().clearNodes().unsetAllMarks().run(),\n        }),\n    })"
       ],
       "helpers": [
         {
-          "name": "scriptChain",
-          "expression": "function scriptChain(chain: ChainedCommands, mark: ScriptMark) {\n    return mark === 'subscript'\n        ? chain.unsetSuperscript().toggleSubscript()\n        : chain.unsetSubscript().toggleSuperscript()\n}"
+          "name": "canHistoryAction",
+          "expression": "function canHistoryAction(editor: Editor, action: HistoryAction): boolean {\n    if (!editor.isEditable || editor.isDestroyed) return false\n    return action === 'undo' ? editor.can().undo() : editor.can().redo()\n}"
         },
         {
-          "name": "canToggleScript",
-          "expression": "function canToggleScript(editor: Editor, mark: ScriptMark): boolean {\n    if (!editor.isEditable || editor.isDestroyed) return false\n\n    // Tiptap 3.32.0 can() suppresses mutations, so a normal can().chain()\n    // cannot model removal of an excluding mark. An explicit start transaction\n    // lets CommandManager run mark commands without dispatching to the view.\n    // No focus command, plugin dispatch, or document update is used in this probe.\n    const scratch = new CommandManager({ editor }).createChain(editor.state.tr)\n    return scriptChain(scratch, mark).run()\n}"
-        },
-        {
-          "name": "applyScript",
-          "expression": "function applyScript(editor: Editor, mark: ScriptMark): boolean {\n    if (!canToggleScript(editor, mark)) return false\n    return scriptChain(editor.chain().focus(), mark).run()\n}"
+          "name": "applyHistoryAction",
+          "expression": "function applyHistoryAction(editor: Editor, action: HistoryAction): boolean {\n    if (!canHistoryAction(editor, action)) return false\n    const chain = editor.chain().focus()\n    return action === 'undo' ? chain.undo().run() : chain.redo().run()\n}"
         },
         {
           "name": "canListAction",
@@ -624,11 +618,11 @@
         {
           "label": "Undo",
           "kind": "EditorButton",
-          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .undo()\n                                .run()",
+          "handler": "() => applyHistoryAction(editor, 'undo')",
           "active": null,
-          "disabled": "!editor.can().undo()",
+          "disabled": "!formatting.canUndo",
           "pressed": null,
-          "mouseDown": null,
+          "mouseDown": "event => event.preventDefault()",
           "className": null,
           "value": null,
           "conditions": [
@@ -639,11 +633,11 @@
         {
           "label": "Redo",
           "kind": "EditorButton",
-          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .redo()\n                                .run()",
+          "handler": "() => applyHistoryAction(editor, 'redo')",
           "active": null,
-          "disabled": "!editor.can().redo()",
+          "disabled": "!formatting.canRedo",
           "pressed": null,
-          "mouseDown": null,
+          "mouseDown": "event => event.preventDefault()",
           "className": null,
           "value": null,
           "conditions": [
@@ -1257,16 +1251,31 @@
       ]
     },
     "extensions/editorExtensions.ts": {
-      "chains": [],
+      "chains": [
+        "scriptChain(scratch, mark).run()",
+        "scriptChain(editor.chain().focus(), mark).run()"
+      ],
       "subscriptions": [],
       "helpers": [
+        {
+          "name": "scriptChain",
+          "expression": "function scriptChain(chain: ChainedCommands, mark: ScriptMark) {\n    return mark === 'subscript'\n        ? chain.unsetSuperscript().toggleSubscript()\n        : chain.unsetSubscript().toggleSuperscript()\n}"
+        },
+        {
+          "name": "canToggleScript",
+          "expression": "export function canToggleScript(editor: Editor, mark: ScriptMark): boolean {\n    if (!editor.isEditable || editor.isDestroyed) return false\n\n    // Tiptap 3.32.0 can() suppresses mutations, so a normal can().chain()\n    // cannot model removal of an excluding mark. An explicit start transaction\n    // lets CommandManager run mark commands without dispatching to the view.\n    // No focus command, plugin dispatch, or document update is used in this probe.\n    const scratch = new CommandManager({ editor }).createChain(editor.state.tr)\n    return scriptChain(scratch, mark).run()\n}"
+        },
+        {
+          "name": "applyScript",
+          "expression": "export function applyScript(editor: Editor, mark: ScriptMark): boolean {\n    if (!canToggleScript(editor, mark)) return false\n    return scriptChain(editor.chain().focus(), mark).run()\n}"
+        },
         {
           "name": "presetMark",
           "expression": "function presetMark(name: string, property: TextPresetProperty) {\n    return Mark.create({\n        name,\n        addAttributes() {\n            return { value: { default: null, rendered: false } }\n        },\n        parseHTML() {\n            return [{ tag: 'span[style]', consuming: false, getAttrs: (node: HTMLElement) => {\n                const value = (node as HTMLElement).style.getPropertyValue(property).trim()\n                return isTextPreset(property, value) ? { value } : false\n            } }]\n        },\n        renderHTML({ mark }) {\n            const value = mark.attrs.value\n            return typeof value === 'string' && isTextPreset(property, value)\n                ? ['span', { style: `${property}: ${value}` }, 0]\n                : ['span', {}, 0]\n        },\n    })\n}"
         },
         {
           "name": "createEditorExtensions",
-          "expression": "export function createEditorExtensions({\n    imageUploadUrl =\n        '/tiptap-editor/media',\n\n    onImageUpload,\n}: EditorExtensionOptions = {}) {\n    return [\n        StarterKit.configure({\n            heading: {\n                levels: [\n                    1,\n                    2,\n                    3,\n                ],\n            },\n\n            link: {\n                openOnClick:\n                    false,\n\n                autolink:\n                    true,\n\n                linkOnPaste:\n                    true,\n\n                defaultProtocol:\n                    'https',\n                // Linkify supplies bare hosts to its validation callback.\n                isAllowedUri: (url, context) => context.defaultValidate(url) && Boolean(normalizeLinkUrl(url, true)),\n                shouldAutoLink: url => Boolean(normalizeLinkUrl(url, true)) &&\n                    (/^https?:\\/\\//i.test(url) || (/^[a-z0-9-]+(?:\\.[a-z0-9-]+)+(?:[/?#]|$)/i.test(url) && !/^\\d{1,3}(?:\\.\\d{1,3}){3}(?:[/?#]|$)/.test(url))),\n            },\n        }),\n\n        presetMark('mwTextColor', 'color'),\n        presetMark('mwFontSize', 'font-size'),\n        presetMark('mwFontFamily', 'font-family'),\n\n        TextAlign.configure({\n            types: [\n                'heading',\n                'paragraph',\n            ],\n\n            alignments: [\n                'left',\n                'center',\n                'right',\n                'justify',\n            ],\n        }),\n\n        // Both marks are installed together; one baseline position per character.\n        Subscript.extend({ excludes: 'superscript' }),\n\n        Superscript.extend({ excludes: 'subscript' }),\n\n        ImageFigure.configure({\n            imageUploadUrl,\n\n            onImageUpload,\n        }),\n\n        VideoEmbed,\n\n        NewsBlock,\n\n        CustomTable.configure({\n            resizable:\n                true,\n\n            lastColumnResizable:\n                true,\n\n            allowTableNodeSelection:\n                true,\n        }),\n\n        TableRow,\n\n        CustomTableHeader,\n\n        CustomTableCell,\n    ]\n}"
+          "expression": "export function createEditorExtensions({\n    imageUploadUrl =\n        '/tiptap-editor/media',\n\n    onImageUpload,\n}: EditorExtensionOptions = {}) {\n    return [\n        StarterKit.configure({\n            heading: {\n                levels: [\n                    1,\n                    2,\n                    3,\n                ],\n            },\n\n            link: {\n                openOnClick:\n                    false,\n\n                autolink:\n                    true,\n\n                linkOnPaste:\n                    true,\n\n                defaultProtocol:\n                    'https',\n                // Linkify supplies bare hosts to its validation callback.\n                isAllowedUri: (url, context) => context.defaultValidate(url) && Boolean(normalizeLinkUrl(url, true)),\n                shouldAutoLink: url => Boolean(normalizeLinkUrl(url, true)) &&\n                    (/^https?:\\/\\//i.test(url) || (/^[a-z0-9-]+(?:\\.[a-z0-9-]+)+(?:[/?#]|$)/i.test(url) && !/^\\d{1,3}(?:\\.\\d{1,3}){3}(?:[/?#]|$)/.test(url))),\n            },\n        }),\n\n        presetMark('mwTextColor', 'color'),\n        presetMark('mwFontSize', 'font-size'),\n        presetMark('mwFontFamily', 'font-family'),\n\n        TextAlign.configure({\n            types: [\n                'heading',\n                'paragraph',\n            ],\n\n            alignments: [\n                'left',\n                'center',\n                'right',\n                'justify',\n            ],\n        }),\n\n        // Both marks are installed together; one baseline position per character.\n        Subscript.extend({\n            excludes: 'superscript',\n            addKeyboardShortcuts() {\n                return { 'Mod-,': () => applyScript(this.editor, 'subscript') }\n            },\n        }),\n\n        Superscript.extend({\n            excludes: 'subscript',\n            addKeyboardShortcuts() {\n                return { 'Mod-.': () => applyScript(this.editor, 'superscript') }\n            },\n        }),\n\n        ImageFigure.configure({\n            imageUploadUrl,\n\n            onImageUpload,\n        }),\n\n        VideoEmbed,\n\n        NewsBlock,\n\n        CustomTable.configure({\n            resizable:\n                true,\n\n            lastColumnResizable:\n                true,\n\n            allowTableNodeSelection:\n                true,\n        }),\n\n        TableRow,\n\n        CustomTableHeader,\n\n        CustomTableCell,\n    ]\n}"
         }
       ],
       "directCommands": [],

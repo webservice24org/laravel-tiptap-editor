@@ -7,7 +7,7 @@ import type {
 } from '@tiptap/react'
 
 import { useState } from 'react'
-import { CommandManager, type ChainedCommands } from '@tiptap/core'
+import { canToggleScript, applyScript } from '../../extensions/editorExtensions'
 
 import EditorButton from './EditorButton'
 import ToolbarGroup from './ToolbarGroup'
@@ -57,30 +57,17 @@ import {
     MediaIcon,
 } from '../icons/EditorIcons'
 
-type ScriptMark = 'subscript' | 'superscript'
+type HistoryAction = 'undo' | 'redo'
 
-// Use the same ordering for the capability probe and the actual action.
-// The opposing mark must be removed before the target's ordinary toggle.
-function scriptChain(chain: ChainedCommands, mark: ScriptMark) {
-    return mark === 'subscript'
-        ? chain.unsetSuperscript().toggleSubscript()
-        : chain.unsetSubscript().toggleSuperscript()
-}
-
-function canToggleScript(editor: Editor, mark: ScriptMark): boolean {
+function canHistoryAction(editor: Editor, action: HistoryAction): boolean {
     if (!editor.isEditable || editor.isDestroyed) return false
-
-    // Tiptap 3.32.0 can() suppresses mutations, so a normal can().chain()
-    // cannot model removal of an excluding mark. An explicit start transaction
-    // lets CommandManager run mark commands without dispatching to the view.
-    // No focus command, plugin dispatch, or document update is used in this probe.
-    const scratch = new CommandManager({ editor }).createChain(editor.state.tr)
-    return scriptChain(scratch, mark).run()
+    return action === 'undo' ? editor.can().undo() : editor.can().redo()
 }
 
-function applyScript(editor: Editor, mark: ScriptMark): boolean {
-    if (!canToggleScript(editor, mark)) return false
-    return scriptChain(editor.chain().focus(), mark).run()
+function applyHistoryAction(editor: Editor, action: HistoryAction): boolean {
+    if (!canHistoryAction(editor, action)) return false
+    const chain = editor.chain().focus()
+    return action === 'undo' ? chain.undo().run() : chain.redo().run()
 }
 
 type ListAction = 'bullet' | 'ordered' | 'indent' | 'outdent'
@@ -258,6 +245,8 @@ export default function EditorToolbar({
             blockquote: currentEditor.isActive('blockquote'),
             canBlockquote: currentEditor.isEditable && currentEditor.can().toggleBlockquote(),
             canHorizontalRule: currentEditor.isEditable && currentEditor.can().setHorizontalRule(),
+            canUndo: canHistoryAction(currentEditor, 'undo'),
+            canRedo: canHistoryAction(currentEditor, 'redo'),
             canClear: currentEditor.isEditable && currentEditor.can().chain().clearNodes().unsetAllMarks().run(),
         }),
     })
@@ -670,28 +659,18 @@ export default function EditorToolbar({
 
                     <EditorButton
                         tooltip="Undo"
-                        disabled={!editor.can().undo()}
-                        onClick={() =>
-                            editor
-                                .chain()
-                                .focus()
-                                .undo()
-                                .run()
-                        }
+                        disabled={!formatting.canUndo}
+                        onMouseDown={event => event.preventDefault()}
+                        onClick={() => applyHistoryAction(editor, 'undo')}
                     >
                         <UndoIcon />
                     </EditorButton>
 
                     <EditorButton
                         tooltip="Redo"
-                        disabled={!editor.can().redo()}
-                        onClick={() =>
-                            editor
-                                .chain()
-                                .focus()
-                                .redo()
-                                .run()
-                        }
+                        disabled={!formatting.canRedo}
+                        onMouseDown={event => event.preventDefault()}
+                        onClick={() => applyHistoryAction(editor, 'redo')}
                     >
                         <RedoIcon />
                     </EditorButton>
