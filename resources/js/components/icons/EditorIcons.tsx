@@ -384,3 +384,19 @@ export function ClearIcon({
         </svg>
     )
 }
+// List nesting controls; the arrow indicates the direction of nesting.
+export function IndentListIcon({ size = 18 }: IconProps) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" {...defaults}>
+            <path d="M3 4h18M11 9h10M11 15h10M3 20h18M3 9l4 3-4 3" />
+        </svg>
+    )
+}
+
+export function OutdentListIcon({ size = 18 }: IconProps) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" {...defaults}>
+            <path d="M3 4h18M11 9h10M11 15h10M3 20h18M7 9l-4 3 4 3" />
+        </svg>
+    )
+}

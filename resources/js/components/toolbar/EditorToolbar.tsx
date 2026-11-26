@@ -40,6 +40,8 @@ import {
     ClearIcon,
     HorizontalRuleIcon,
     ItalicIcon,
+    IndentListIcon,
+    OutdentListIcon,
     JustifyIcon,
     OrderedListIcon,
     QuoteIcon,
@@ -78,6 +80,63 @@ function canToggleScript(editor: Editor, mark: ScriptMark): boolean {
 function applyScript(editor: Editor, mark: ScriptMark): boolean {
     if (!canToggleScript(editor, mark)) return false
     return scriptChain(editor.chain().focus(), mark).run()
+}
+
+type ListAction = 'bullet' | 'ordered' | 'indent' | 'outdent'
+type Alignment = 'left' | 'center' | 'right' | 'justify'
+
+function canListAction(editor: Editor, action: ListAction): boolean {
+    if (!editor.isEditable || editor.isDestroyed) return false
+    const commands = editor.can()
+    switch (action) {
+        case 'bullet': return commands.toggleBulletList()
+        case 'ordered': return commands.toggleOrderedList()
+        case 'indent': return commands.sinkListItem('listItem')
+        case 'outdent': return commands.liftListItem('listItem')
+    }
+}
+
+function applyListAction(editor: Editor, action: ListAction): boolean {
+    if (!canListAction(editor, action)) return false
+    const chain = editor.chain().focus()
+    switch (action) {
+        case 'bullet': return chain.toggleBulletList().run()
+        case 'ordered': return chain.toggleOrderedList().run()
+        case 'indent': return chain.sinkListItem('listItem').run()
+        case 'outdent': return chain.liftListItem('listItem').run()
+    }
+}
+
+// TextAlign only supports paragraphs and headings. Do not enable alignment
+// for a code block or a selection containing only unsupported node types.
+// A mixed selection with an unsupported text block must not be partly aligned.
+function canAlignSelection(editor: Editor, alignment: Alignment): boolean {
+    if (!editor.isEditable || editor.isDestroyed || editor.isActive('table')) return false
+    const { selection, doc } = editor.state
+    const supported = (name: string) => name === 'paragraph' || name === 'heading'
+    if (selection.empty) {
+        if (!supported(selection.$from.parent.type.name)) return false
+    } else {
+        let found = false
+        let unsupported = false
+        doc.nodesBetween(selection.from, selection.to, node => {
+            if (node.type.name === 'table') {
+                unsupported = true
+            } else if (node.isTextblock) {
+                if (supported(node.type.name)) found = true
+                else unsupported = true
+            } else if (node.isBlock && node.isAtom) {
+                unsupported = true
+            }
+        })
+        if (!found || unsupported) return false
+    }
+    return editor.can().setTextAlign(alignment)
+}
+
+function applyAlignment(editor: Editor, alignment: Alignment): boolean {
+    if (!canAlignSelection(editor, alignment)) return false
+    return editor.chain().focus().setTextAlign(alignment).run()
 }
 
 interface EditorToolbarProps {
@@ -157,6 +216,20 @@ export default function EditorToolbar({
             canSubscript: canToggleScript(currentEditor, 'subscript'),
             superscript: currentEditor.isActive('superscript'),
             canSuperscript: canToggleScript(currentEditor, 'superscript'),
+            bulletList: currentEditor.isActive('bulletList'),
+            orderedList: currentEditor.isActive('orderedList'),
+            canBulletList: canListAction(currentEditor, 'bullet'),
+            canOrderedList: canListAction(currentEditor, 'ordered'),
+            canIndentList: canListAction(currentEditor, 'indent'),
+            canOutdentList: canListAction(currentEditor, 'outdent'),
+            alignLeft: currentEditor.isActive({ textAlign: 'left' }),
+            alignCenter: currentEditor.isActive({ textAlign: 'center' }),
+            alignRight: currentEditor.isActive({ textAlign: 'right' }),
+            alignJustify: currentEditor.isActive({ textAlign: 'justify' }),
+            canAlignLeft: canAlignSelection(currentEditor, 'left'),
+            canAlignCenter: canAlignSelection(currentEditor, 'center'),
+            canAlignRight: canAlignSelection(currentEditor, 'right'),
+            canAlignJustify: canAlignSelection(currentEditor, 'justify'),
             blockquote: currentEditor.isActive('blockquote'),
             canBlockquote: currentEditor.isEditable && currentEditor.can().toggleBlockquote(),
             canHorizontalRule: currentEditor.isEditable && currentEditor.can().setHorizontalRule(),
@@ -375,31 +448,41 @@ export default function EditorToolbar({
 
                 <ToolbarGroup>
                     <EditorButton
-                        active={editor.isActive('bulletList')}
+                        active={formatting.bulletList}
+                        disabled={!formatting.canBulletList}
+                        onMouseDown={event => event.preventDefault()}
                         tooltip="Bullet List"
-                        onClick={() =>
-                            editor
-                                .chain()
-                                .focus()
-                                .toggleBulletList()
-                                .run()
-                        }
+                        onClick={() => applyListAction(editor, 'bullet')}
                     >
                         <BulletListIcon />
                     </EditorButton>
 
                     <EditorButton
-                        active={editor.isActive('orderedList')}
+                        active={formatting.orderedList}
+                        disabled={!formatting.canOrderedList}
+                        onMouseDown={event => event.preventDefault()}
                         tooltip="Ordered List"
-                        onClick={() =>
-                            editor
-                                .chain()
-                                .focus()
-                                .toggleOrderedList()
-                                .run()
-                        }
+                        onClick={() => applyListAction(editor, 'ordered')}
                     >
                         <OrderedListIcon />
+                    </EditorButton>
+
+                    <EditorButton
+                        disabled={!formatting.canIndentList}
+                        onMouseDown={event => event.preventDefault()}
+                        tooltip="Indent List Item"
+                        onClick={() => applyListAction(editor, 'indent')}
+                    >
+                        <IndentListIcon />
+                    </EditorButton>
+
+                    <EditorButton
+                        disabled={!formatting.canOutdentList}
+                        onMouseDown={event => event.preventDefault()}
+                        tooltip="Outdent List Item"
+                        onClick={() => applyListAction(editor, 'outdent')}
+                    >
+                        <OutdentListIcon />
                     </EditorButton>
                 </ToolbarGroup>
 
@@ -409,65 +492,41 @@ export default function EditorToolbar({
 
                     <ToolbarGroup>
                         <EditorButton
-                            active={editor.isActive({
-                                textAlign: 'left',
-                            })}
+                            active={formatting.alignLeft}
+                            disabled={!formatting.canAlignLeft}
+                            onMouseDown={event => event.preventDefault()}
                             tooltip="Align Left"
-                            onClick={() =>
-                                editor
-                                    .chain()
-                                    .focus()
-                                    .setTextAlign('left')
-                                    .run()
-                            }
+                            onClick={() => applyAlignment(editor, 'left')}
                         >
                             <AlignLeftIcon />
                         </EditorButton>
 
                         <EditorButton
-                            active={editor.isActive({
-                                textAlign: 'center',
-                            })}
+                            active={formatting.alignCenter}
+                            disabled={!formatting.canAlignCenter}
+                            onMouseDown={event => event.preventDefault()}
                             tooltip="Align Center"
-                            onClick={() =>
-                                editor
-                                    .chain()
-                                    .focus()
-                                    .setTextAlign('center')
-                                    .run()
-                            }
+                            onClick={() => applyAlignment(editor, 'center')}
                         >
                             <AlignCenterIcon />
                         </EditorButton>
 
                         <EditorButton
-                            active={editor.isActive({
-                                textAlign: 'right',
-                            })}
+                            active={formatting.alignRight}
+                            disabled={!formatting.canAlignRight}
+                            onMouseDown={event => event.preventDefault()}
                             tooltip="Align Right"
-                            onClick={() =>
-                                editor
-                                    .chain()
-                                    .focus()
-                                    .setTextAlign('right')
-                                    .run()
-                            }
+                            onClick={() => applyAlignment(editor, 'right')}
                         >
                             <AlignRightIcon />
                         </EditorButton>
 
                         <EditorButton
-                            active={editor.isActive({
-                                textAlign: 'justify',
-                            })}
+                            active={formatting.alignJustify}
+                            disabled={!formatting.canAlignJustify}
+                            onMouseDown={event => event.preventDefault()}
                             tooltip="Justify"
-                            onClick={() =>
-                                editor
-                                    .chain()
-                                    .focus()
-                                    .setTextAlign('justify')
-                                    .run()
-                            }
+                            onClick={() => applyAlignment(editor, 'justify')}
                         >
                             <JustifyIcon />
                         </EditorButton>

@@ -84,6 +84,7 @@ const ALLOWED_ATTR = [
     'allow',
     'allowfullscreen',
     'referrerpolicy',
+    'start',
     'rowspan',
     'colspan',
     'colwidth',
@@ -239,6 +240,15 @@ DOMPurify.addHook(
             name.startsWith('on')
         ) {
             data.keepAttr = false
+            return
+        }
+
+        // Numbered lists may start at a custom positive decimal integer.
+        // Never allow this attribute on a different element or accept coercion.
+        if (name === 'start') {
+            if (node.nodeName.toLowerCase() !== 'ol' || !/^[1-9][0-9]{0,4}$/.test(value) || value.length !== value.trim().length) {
+                data.keepAttr = false
+            }
             return
         }
 

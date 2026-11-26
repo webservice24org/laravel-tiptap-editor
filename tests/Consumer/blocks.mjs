@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 export const expectedBlockChecks=['heading 1 round trip','heading 2 round trip','heading 3 round trip','selection-only block state','mixed block selection','blockquote toggle','horizontal rule','clear block formatting','safe code markup round trip','source mode format guard']
 
 // Native DOM Range setup only. Never dispatch internal editor transactions.
-async function selectBlocks(editor, first, last=first, full=false) {
+export async function selectBlocks(editor, first, last=first, full=false) {
     const result=await editor.evaluate(async(root,{first,last,full})=>{
         const frame=()=>new Promise(resolve=>requestAnimationFrame(resolve))
         root.focus({preventScroll:true});await frame()

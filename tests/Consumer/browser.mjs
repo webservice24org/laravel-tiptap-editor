@@ -5,6 +5,7 @@ import http from 'node:http'
 import { chromium } from 'playwright'
 import { runFormatting } from './formatting.mjs'
 import { runBlocks } from './blocks.mjs'
+import { runLists } from './lists.mjs'
 const [expected,report] = process.argv.slice(2)
 assert.match(expected,/^(18|19)\.\d+\.\d+$/)
 assert.ok(report)
@@ -43,8 +44,9 @@ try {
     assert.equal(await editor.innerText(),'Consumer smoke edited')
     const formatting=await runFormatting(page,editor)
     const blocks=await runBlocks(page,editor)
+    const lists=await runLists(page,editor)
     assert.deepEqual(errors,[],'Browser errors');assert.deepEqual(unexpected,[],'Unexpected network requests')
-    fs.writeFileSync(report,JSON.stringify({status:'passed',react:expected,chromium:browser.version(),checks:['named mount','React version','CSS applied','minHeight','edit callback','unmount','default remount','sanitizer and extension factory','no page errors or remote requests'],formatting,blocks,warnings},null,2)+'\n',{flag:'wx'})
+    fs.writeFileSync(report,JSON.stringify({status:'passed',react:expected,chromium:browser.version(),checks:['named mount','React version','CSS applied','minHeight','edit callback','unmount','default remount','sanitizer and extension factory','no page errors or remote requests'],formatting,blocks,lists,warnings},null,2)+'\n',{flag:'wx'})
     console.log('Browser consumer smoke passed: React '+expected)
 } finally {
     try {if(browser)await browser.close()} finally {await new Promise(resolve=>server.close(resolve))}

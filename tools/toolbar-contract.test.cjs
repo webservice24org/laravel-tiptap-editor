@@ -16,7 +16,7 @@ const dropdown='components/toolbar/FormatDropdown.tsx';
 const table='components/toolbar/TableContextualToolbar.tsx';
 const mutation=fn=>{const clone=structuredClone(actual);fn(clone);return clone;};
 test('accepted source inventory matches review record',()=>verify(actual,expected));
-test('inventory counts all three toolbar surfaces',()=>assert.deepEqual(totals(actual),{controls:50,options:5,command_chains:45,source_files:15}));
+test('inventory counts all three toolbar surfaces',()=>assert.deepEqual(totals(actual),{controls:52,options:5,command_chains:44,source_files:15}));
 test('extract named button and exact handler',()=>{const [c]=controls('const a=<EditorButton tooltip="Bold" onClick={()=>editor.chain().focus().toggleBold().run()} />');assert.equal(c.label,'Bold');assert.match(c.handler,/toggleBold/);});
 test('capture active and disabled expressions',()=>{const [c]=controls('const a=<EditorButton tooltip="Undo" active={false} disabled={!editor.can().undo()} onClick={undo}/>');assert.equal(c.active,'false');assert.equal(c.disabled,'!editor.can().undo()');});
 test('capture nested rendering conditions',()=>{const [c]=controls('const a=mode === "visual" && (!inside && <button aria-label="Align" onClick={align}/>);');assert.deepEqual(c.conditions,['mode === "visual"','!inside']);});
@@ -135,4 +135,26 @@ for(const [label,cap,cmd] of [['Blockquote','canBlockquote','toggleBlockquote'],
 });
 test('client sanitizer retains code and pre in the tag allowlist',()=>{
     const h=actual.files['utils/sanitizeHtml.ts'].helpers.find(h=>h.name==='ALLOWED_TAGS').expression;for(const tag of ['code','pre','blockquote','hr','h1','h2','h3'])assert.ok(h.includes("'"+tag+"'"));
+});
+
+for(const [label,cap,action,command] of [['Bullet List','canBulletList','bullet','toggleBulletList'],['Ordered List','canOrderedList','ordered','toggleOrderedList'],['Indent List Item','canIndentList','indent','sinkListItem'],['Outdent List Item','canOutdentList','outdent','liftListItem']])test(label+' uses guarded list capability and selection protection',()=>{
+    const source=actual.files[main],c=source.controls.find(c=>c.label===label);
+    assert.equal(c.disabled,'!formatting.'+cap);assert.match(c.mouseDown,/preventDefault/);assert.equal(c.handler,`() => applyListAction(editor, '${action}')`);
+    assert.ok(source.subscriptions.some(s=>s.includes(`canListAction(currentEditor, '${action}')`)));
+    assert.ok(source.helpers.find(h=>h.name==='canListAction').expression.includes(command+'('));assert.ok(source.helpers.find(h=>h.name==='applyListAction').expression.includes(command+'('));
+    if(action==='bullet'||action==='ordered')assert.equal(c.active,'formatting.'+action+'List');else assert.equal(c.active,null);
+});
+for(const [label,cap,align] of [['Align Left','Left','left'],['Align Center','Center','center'],['Align Right','Right','right'],['Justify','Justify','justify']])test(label+' uses reactive state, guard and selection protection',()=>{
+    const source=actual.files[main],c=source.controls.find(c=>c.label===label);
+    assert.equal(c.active,'formatting.align'+cap);assert.equal(c.disabled,'!formatting.canAlign'+cap);assert.match(c.mouseDown,/preventDefault/);assert.equal(c.handler,`() => applyAlignment(editor, '${align}')`);
+    assert.ok(c.conditions.includes('!isInsideTable'));assert.ok(source.subscriptions.some(s=>s.includes(`canAlignSelection(currentEditor, '${align}')`)));
+});
+test('list action rechecks editability and command capability before focus',()=>{
+    const helpers=actual.files[main].helpers;assert.match(helpers.find(h=>h.name==='canListAction').expression,/!editor.isEditable \|\| editor.isDestroyed/);assert.match(helpers.find(h=>h.name==='applyListAction').expression,/if \(!canListAction\(editor, action\)\) return false/);
+});
+test('alignment capability limits supported text blocks and rejects atoms',()=>{
+    const helpers=actual.files[main].helpers;const h=helpers.find(h=>h.name==='canAlignSelection').expression;assert.match(h,/editor.isActive\('table'\)/);assert.match(h,/name === 'paragraph' \|\| name === 'heading'/);assert.match(h,/!found \|\| unsupported/);assert.match(h,/node.isBlock && node.isAtom/);assert.match(h,/node.type.name === 'table'/);assert.match(helpers.find(h=>h.name==='applyAlignment').expression,/if \(!canAlignSelection\(editor, alignment\)\) return false/);
+});
+test('client allowlist includes ordered start and existing list nodes',()=>{
+    const helpers=actual.files['utils/sanitizeHtml.ts'].helpers;assert.ok(helpers.find(h=>h.name==='ALLOWED_ATTR').expression.includes("'start'"));for(const tag of ['ol','ul','li'])assert.ok(helpers.find(h=>h.name==='ALLOWED_TAGS').expression.includes("'"+tag+"'"));
 });

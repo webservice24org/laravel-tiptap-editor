@@ -110,6 +110,9 @@ final class EditorHtmlPolicy
         if ($name === 'title' || ($name === 'alt' && $tag === 'img')) {
             return $value;
         }
+        if ($name === 'start') {
+            return $tag === 'ol' && preg_match('/\A[1-9][0-9]{0,4}\z/', $value) === 1 ? $value : null;
+        }
         if ($tag === 'a') {
             if ($name === 'href') {
                 return self::url($value, fragment: true);

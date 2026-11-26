@@ -5,18 +5,17 @@
       "chains": [
         "scriptChain(scratch, mark).run()",
         "scriptChain(editor.chain().focus(), mark).run()",
+        "chain.toggleBulletList().run()",
+        "chain.toggleOrderedList().run()",
+        "chain.sinkListItem('listItem').run()",
+        "chain.liftListItem('listItem').run()",
+        "editor.chain().focus().setTextAlign(alignment).run()",
         "editor\n            .chain()\n            .focus()\n            .clearNodes()\n            .unsetAllMarks()\n            .run()",
         "currentEditor.can().chain().clearNodes().unsetAllMarks().run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleBold()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleItalic()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleUnderline()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleStrike()\n                                .run()",
-        "editor\n                                .chain()\n                                .focus()\n                                .toggleBulletList()\n                                .run()",
-        "editor\n                                .chain()\n                                .focus()\n                                .toggleOrderedList()\n                                .run()",
-        "editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('left')\n                                    .run()",
-        "editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('center')\n                                    .run()",
-        "editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('right')\n                                    .run()",
-        "editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('justify')\n                                    .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .extendMarkRange('link')\n                                .unsetLink()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleBlockquote()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .setHorizontalRule()\n                                .run()",
@@ -24,7 +23,7 @@
         "editor\n                                .chain()\n                                .focus()\n                                .redo()\n                                .run()"
       ],
       "subscriptions": [
-        "useEditorState({\n        editor,\n        selector: ({ editor: currentEditor }) => ({\n            isInsideTable: currentEditor.isActive('table'),\n            bold: currentEditor.isActive('bold'),\n            canBold: currentEditor.isEditable && currentEditor.can().toggleBold(),\n            italic: currentEditor.isActive('italic'),\n            canItalic: currentEditor.isEditable && currentEditor.can().toggleItalic(),\n            underline: currentEditor.isActive('underline'),\n            canUnderline: currentEditor.isEditable && currentEditor.can().toggleUnderline(),\n            strike: currentEditor.isActive('strike'),\n            canStrike: currentEditor.isEditable && currentEditor.can().toggleStrike(),\n            subscript: currentEditor.isActive('subscript'),\n            canSubscript: canToggleScript(currentEditor, 'subscript'),\n            superscript: currentEditor.isActive('superscript'),\n            canSuperscript: canToggleScript(currentEditor, 'superscript'),\n            blockquote: currentEditor.isActive('blockquote'),\n            canBlockquote: currentEditor.isEditable && currentEditor.can().toggleBlockquote(),\n            canHorizontalRule: currentEditor.isEditable && currentEditor.can().setHorizontalRule(),\n            canClear: currentEditor.isEditable && currentEditor.can().chain().clearNodes().unsetAllMarks().run(),\n        }),\n    })"
+        "useEditorState({\n        editor,\n        selector: ({ editor: currentEditor }) => ({\n            isInsideTable: currentEditor.isActive('table'),\n            bold: currentEditor.isActive('bold'),\n            canBold: currentEditor.isEditable && currentEditor.can().toggleBold(),\n            italic: currentEditor.isActive('italic'),\n            canItalic: currentEditor.isEditable && currentEditor.can().toggleItalic(),\n            underline: currentEditor.isActive('underline'),\n            canUnderline: currentEditor.isEditable && currentEditor.can().toggleUnderline(),\n            strike: currentEditor.isActive('strike'),\n            canStrike: currentEditor.isEditable && currentEditor.can().toggleStrike(),\n            subscript: currentEditor.isActive('subscript'),\n            canSubscript: canToggleScript(currentEditor, 'subscript'),\n            superscript: currentEditor.isActive('superscript'),\n            canSuperscript: canToggleScript(currentEditor, 'superscript'),\n            bulletList: currentEditor.isActive('bulletList'),\n            orderedList: currentEditor.isActive('orderedList'),\n            canBulletList: canListAction(currentEditor, 'bullet'),\n            canOrderedList: canListAction(currentEditor, 'ordered'),\n            canIndentList: canListAction(currentEditor, 'indent'),\n            canOutdentList: canListAction(currentEditor, 'outdent'),\n            alignLeft: currentEditor.isActive({ textAlign: 'left' }),\n            alignCenter: currentEditor.isActive({ textAlign: 'center' }),\n            alignRight: currentEditor.isActive({ textAlign: 'right' }),\n            alignJustify: currentEditor.isActive({ textAlign: 'justify' }),\n            canAlignLeft: canAlignSelection(currentEditor, 'left'),\n            canAlignCenter: canAlignSelection(currentEditor, 'center'),\n            canAlignRight: canAlignSelection(currentEditor, 'right'),\n            canAlignJustify: canAlignSelection(currentEditor, 'justify'),\n            blockquote: currentEditor.isActive('blockquote'),\n            canBlockquote: currentEditor.isEditable && currentEditor.can().toggleBlockquote(),\n            canHorizontalRule: currentEditor.isEditable && currentEditor.can().setHorizontalRule(),\n            canClear: currentEditor.isEditable && currentEditor.can().chain().clearNodes().unsetAllMarks().run(),\n        }),\n    })"
       ],
       "helpers": [
         {
@@ -38,6 +37,22 @@
         {
           "name": "applyScript",
           "expression": "function applyScript(editor: Editor, mark: ScriptMark): boolean {\n    if (!canToggleScript(editor, mark)) return false\n    return scriptChain(editor.chain().focus(), mark).run()\n}"
+        },
+        {
+          "name": "canListAction",
+          "expression": "function canListAction(editor: Editor, action: ListAction): boolean {\n    if (!editor.isEditable || editor.isDestroyed) return false\n    const commands = editor.can()\n    switch (action) {\n        case 'bullet': return commands.toggleBulletList()\n        case 'ordered': return commands.toggleOrderedList()\n        case 'indent': return commands.sinkListItem('listItem')\n        case 'outdent': return commands.liftListItem('listItem')\n    }\n}"
+        },
+        {
+          "name": "applyListAction",
+          "expression": "function applyListAction(editor: Editor, action: ListAction): boolean {\n    if (!canListAction(editor, action)) return false\n    const chain = editor.chain().focus()\n    switch (action) {\n        case 'bullet': return chain.toggleBulletList().run()\n        case 'ordered': return chain.toggleOrderedList().run()\n        case 'indent': return chain.sinkListItem('listItem').run()\n        case 'outdent': return chain.liftListItem('listItem').run()\n    }\n}"
+        },
+        {
+          "name": "canAlignSelection",
+          "expression": "function canAlignSelection(editor: Editor, alignment: Alignment): boolean {\n    if (!editor.isEditable || editor.isDestroyed || editor.isActive('table')) return false\n    const { selection, doc } = editor.state\n    const supported = (name: string) => name === 'paragraph' || name === 'heading'\n    if (selection.empty) {\n        if (!supported(selection.$from.parent.type.name)) return false\n    } else {\n        let found = false\n        let unsupported = false\n        doc.nodesBetween(selection.from, selection.to, node => {\n            if (node.type.name === 'table') {\n                unsupported = true\n            } else if (node.isTextblock) {\n                if (supported(node.type.name)) found = true\n                else unsupported = true\n            } else if (node.isBlock && node.isAtom) {\n                unsupported = true\n            }\n        })\n        if (!found || unsupported) return false\n    }\n    return editor.can().setTextAlign(alignment)\n}"
+        },
+        {
+          "name": "applyAlignment",
+          "expression": "function applyAlignment(editor: Editor, alignment: Alignment): boolean {\n    if (!canAlignSelection(editor, alignment)) return false\n    return editor.chain().focus().setTextAlign(alignment).run()\n}"
         },
         {
           "name": "clearFormatting",
@@ -258,11 +273,11 @@
         {
           "label": "Bullet List",
           "kind": "EditorButton",
-          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .toggleBulletList()\n                                .run()",
-          "active": "editor.isActive('bulletList')",
-          "disabled": null,
+          "handler": "() => applyListAction(editor, 'bullet')",
+          "active": "formatting.bulletList",
+          "disabled": "!formatting.canBulletList",
           "pressed": null,
-          "mouseDown": null,
+          "mouseDown": "event => event.preventDefault()",
           "className": null,
           "value": null,
           "conditions": [
@@ -273,11 +288,41 @@
         {
           "label": "Ordered List",
           "kind": "EditorButton",
-          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .toggleOrderedList()\n                                .run()",
-          "active": "editor.isActive('orderedList')",
-          "disabled": null,
+          "handler": "() => applyListAction(editor, 'ordered')",
+          "active": "formatting.orderedList",
+          "disabled": "!formatting.canOrderedList",
           "pressed": null,
-          "mouseDown": null,
+          "mouseDown": "event => event.preventDefault()",
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Indent List Item",
+          "kind": "EditorButton",
+          "handler": "() => applyListAction(editor, 'indent')",
+          "active": null,
+          "disabled": "!formatting.canIndentList",
+          "pressed": null,
+          "mouseDown": "event => event.preventDefault()",
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Outdent List Item",
+          "kind": "EditorButton",
+          "handler": "() => applyListAction(editor, 'outdent')",
+          "active": null,
+          "disabled": "!formatting.canOutdentList",
+          "pressed": null,
+          "mouseDown": "event => event.preventDefault()",
           "className": null,
           "value": null,
           "conditions": [
@@ -288,11 +333,11 @@
         {
           "label": "Align Left",
           "kind": "EditorButton",
-          "handler": "() =>\n                                editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('left')\n                                    .run()",
-          "active": "editor.isActive({\n                                textAlign: 'left',\n                            })",
-          "disabled": null,
+          "handler": "() => applyAlignment(editor, 'left')",
+          "active": "formatting.alignLeft",
+          "disabled": "!formatting.canAlignLeft",
           "pressed": null,
-          "mouseDown": null,
+          "mouseDown": "event => event.preventDefault()",
           "className": null,
           "value": null,
           "conditions": [
@@ -304,11 +349,11 @@
         {
           "label": "Align Center",
           "kind": "EditorButton",
-          "handler": "() =>\n                                editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('center')\n                                    .run()",
-          "active": "editor.isActive({\n                                textAlign: 'center',\n                            })",
-          "disabled": null,
+          "handler": "() => applyAlignment(editor, 'center')",
+          "active": "formatting.alignCenter",
+          "disabled": "!formatting.canAlignCenter",
           "pressed": null,
-          "mouseDown": null,
+          "mouseDown": "event => event.preventDefault()",
           "className": null,
           "value": null,
           "conditions": [
@@ -320,11 +365,11 @@
         {
           "label": "Align Right",
           "kind": "EditorButton",
-          "handler": "() =>\n                                editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('right')\n                                    .run()",
-          "active": "editor.isActive({\n                                textAlign: 'right',\n                            })",
-          "disabled": null,
+          "handler": "() => applyAlignment(editor, 'right')",
+          "active": "formatting.alignRight",
+          "disabled": "!formatting.canAlignRight",
           "pressed": null,
-          "mouseDown": null,
+          "mouseDown": "event => event.preventDefault()",
           "className": null,
           "value": null,
           "conditions": [
@@ -336,11 +381,11 @@
         {
           "label": "Justify",
           "kind": "EditorButton",
-          "handler": "() =>\n                                editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('justify')\n                                    .run()",
-          "active": "editor.isActive({\n                                textAlign: 'justify',\n                            })",
-          "disabled": null,
+          "handler": "() => applyAlignment(editor, 'justify')",
+          "active": "formatting.alignJustify",
+          "disabled": "!formatting.canAlignJustify",
           "pressed": null,
-          "mouseDown": null,
+          "mouseDown": "event => event.preventDefault()",
           "className": null,
           "value": null,
           "conditions": [
@@ -1074,7 +1119,7 @@
         },
         {
           "name": "ALLOWED_ATTR",
-          "expression": "[\n    'href',\n    'target',\n    'rel',\n    'src',\n    'alt',\n    'title',\n    'class',\n    'style',\n    'loading',\n    'decoding',\n    'allow',\n    'allowfullscreen',\n    'referrerpolicy',\n    'rowspan',\n    'colspan',\n    'colwidth',\n    ...SAFE_DATA_ATTRIBUTES,\n] as const"
+          "expression": "[\n    'href',\n    'target',\n    'rel',\n    'src',\n    'alt',\n    'title',\n    'class',\n    'style',\n    'loading',\n    'decoding',\n    'allow',\n    'allowfullscreen',\n    'referrerpolicy',\n    'start',\n    'rowspan',\n    'colspan',\n    'colwidth',\n    ...SAFE_DATA_ATTRIBUTES,\n] as const"
         }
       ],
       "directCommands": [],
