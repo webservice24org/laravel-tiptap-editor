@@ -7,6 +7,12 @@ if [[ "${GITHUB_ACTIONS:-}" != true || -z "${RUNNER_TEMP:-}" ]]; then
 fi
 report="$RUNNER_TEMP/editor-compatibility"
 mkdir -p "$report"
+# setup-php exports COMPOSER_NO_AUDIT=1 by default. Remove the known
+# setup default before Composer runs; do not allow it to disable audits.
+if [[ "${COMPOSER_NO_AUDIT:-}" == 1 ]]; then
+    unset COMPOSER_NO_AUDIT
+    echo 'Removed setup-php COMPOSER_NO_AUDIT default; security audits enabled.'
+fi
 # Isolate Composer policy from any machine-level config/plugins. Never upload this home.
 for key in COMPOSER COMPOSER_NO_AUDIT COMPOSER_NO_SECURITY_BLOCKING COMPOSER_NO_BLOCKING COMPOSER_IGNORE_PLATFORM_REQS COMPOSER_IGNORE_PLATFORM_REQ COMPOSER_POLICY COMPOSER_AUDIT_ABANDONED COMPOSER_REPO_PACKAGIST COMPOSER_DISABLE_NETWORK COMPOSER_NO_DEV; do
     if [[ -n "${!key:-}" ]]; then

@@ -2,6 +2,9 @@
 """Synthetic positive/negative tests for CI evidence verification."""
 import importlib.util
 import json
+import os
+import shutil
+import subprocess
 from pathlib import Path
 import tempfile
 import unittest
@@ -43,6 +46,34 @@ class EvidenceTest(unittest.TestCase):
     def reject(self):
         with self.assertRaises((ValueError, OSError, ET.ParseError)):
             self.verify()
+
+    @unittest.skipUnless(os.name == 'posix' and shutil.which('bash'), 'CI runner test requires POSIX Bash')
+    def test_runner_setup_php_audit_default(self):
+        # Execute the actual runner until its first preflight command, using a
+        # sentinel instead of Python. No dependency resolution or deletion.
+        self.check_runner_environment({'COMPOSER_NO_AUDIT': '1'}, 73, 'PREFLIGHT_AUDIT_ENABLED')
+
+    @unittest.skipUnless(os.name == 'posix' and shutil.which('bash'), 'CI runner test requires POSIX Bash')
+    def test_runner_rejects_other_security_overrides(self):
+        for key in ('COMPOSER_NO_SECURITY_BLOCKING', 'COMPOSER_NO_BLOCKING', 'COMPOSER_IGNORE_PLATFORM_REQS', 'COMPOSER_POLICY', 'COMPOSER_NO_DEV'):
+            with self.subTest(key=key):
+                self.check_runner_environment({'COMPOSER_NO_AUDIT': '1', key: '1'}, 1, f'Unexpected Composer override: {key}')
+        self.check_runner_environment({'COMPOSER_NO_AUDIT': 'unexpected'}, 1, 'Unexpected Composer override: COMPOSER_NO_AUDIT')
+
+    def check_runner_environment(self, overrides, code, marker):
+        runner = Path(__file__).resolve().with_name('ci-compatibility-lane.sh')
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            sentinel = directory / 'python3'
+            sentinel.write_text('#!/bin/sh\nif [ "${COMPOSER_NO_AUDIT+x}" = x ]; then exit 74; fi\necho PREFLIGHT_AUDIT_ENABLED\nexit 73\n', encoding='utf-8')
+            sentinel.chmod(0o700)
+            env = {'PATH': str(directory) + os.pathsep + os.defpath,
+                   'GITHUB_ACTIONS': 'true', 'RUNNER_TEMP': temp, **overrides}
+            result = subprocess.run([shutil.which('bash'), str(runner)], cwd=temp,
+                                    env=env, capture_output=True, text=True, timeout=15)
+            self.assertEqual(result.returncode, code, result.stdout + result.stderr)
+            self.assertIn(marker, result.stdout + result.stderr)
+            self.assertFalse((directory / 'editor-compatibility' / 'resolution-started').exists())
 
     def test_clean(self):
         self.assertEqual(self.verify()['tests'], 203)
