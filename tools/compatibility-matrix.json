@@ -1,0 +1,95 @@
+{
+    "schema_version": 1,
+    "lanes": [
+        {
+            "id": "laravel-12-php-82-latest",
+            "php": "8.2",
+            "laravel": "12",
+            "framework": "^12.0",
+            "testbench": "^10.0",
+            "phpunit": "^11.5.50",
+            "policy": "latest",
+            "required": true
+        },
+        {
+            "id": "laravel-12-php-83-latest",
+            "php": "8.3",
+            "laravel": "12",
+            "framework": "^12.0",
+            "testbench": "^10.0",
+            "phpunit": "^11.5.50",
+            "policy": "latest",
+            "required": true
+        },
+        {
+            "id": "laravel-12-php-84-latest",
+            "php": "8.4",
+            "laravel": "12",
+            "framework": "^12.0",
+            "testbench": "^10.0",
+            "phpunit": "^11.5.50",
+            "policy": "latest",
+            "required": true
+        },
+        {
+            "id": "laravel-12-php-85-latest",
+            "php": "8.5",
+            "laravel": "12",
+            "framework": "^12.0",
+            "testbench": "^10.0",
+            "phpunit": "^11.5.50",
+            "policy": "latest",
+            "required": true
+        },
+        {
+            "id": "laravel-13-php-83-latest",
+            "php": "8.3",
+            "laravel": "13",
+            "framework": "^13.0",
+            "testbench": "^11.0",
+            "phpunit": "^12.0",
+            "policy": "latest",
+            "required": true
+        },
+        {
+            "id": "laravel-13-php-84-latest",
+            "php": "8.4",
+            "laravel": "13",
+            "framework": "^13.0",
+            "testbench": "^11.0",
+            "phpunit": "^12.0",
+            "policy": "latest",
+            "required": true
+        },
+        {
+            "id": "laravel-13-php-85-latest",
+            "php": "8.5",
+            "laravel": "13",
+            "framework": "^13.0",
+            "testbench": "^11.0",
+            "phpunit": "^12.0",
+            "policy": "latest",
+            "required": true
+        },
+        {
+            "id": "laravel-12-php-82-lowest",
+            "php": "8.2",
+            "laravel": "12",
+            "framework": "^12.0",
+            "testbench": "^10.0",
+            "phpunit": "^11.5.50",
+            "policy": "lowest",
+            "required": false
+        },
+        {
+            "id": "laravel-13-php-83-lowest",
+            "php": "8.3",
+            "laravel": "13",
+            "framework": "^13.0",
+            "testbench": "^11.0",
+            "phpunit": "^12.0",
+            "policy": "lowest",
+            "required": false
+        }
+    ]
+}

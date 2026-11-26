@@ -22,13 +22,14 @@ class CleanupTemporaryMediaCommand extends Command
                 'hours'
             );
 
-        $hours =
-            $hoursOption !== null
-                ? max(
-                    1,
-                    (int) $hoursOption
-                )
-                : null;
+        if ($hoursOption !== null && ((! is_string($hoursOption) && ! is_int($hoursOption))
+            || preg_match('/\A[1-9][0-9]{0,4}\z/D', (string) $hoursOption) !== 1
+            || (int) $hoursOption > 87600)) {
+            $this->error('The --hours option must be an integer from 1 to 87600.');
+            return self::FAILURE;
+        }
+
+        $hours = $hoursOption === null ? null : (int) $hoursOption;
 
         $deleted =
             $mediaService

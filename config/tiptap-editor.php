@@ -44,12 +44,29 @@ return [
             5120
         ),
 
+        // Limits apply to the actual uploaded bytes and reported image canvas.
+        'max_width' => 8192,
+        'max_height' => 8192,
+        'max_pixels' => 40000000,
+
         'allowed_mimes' => [
             'image/jpeg',
             'image/png',
             'image/webp',
             'image/gif',
         ],
+    ],
+
+    /*
+     * Built-in upload endpoint only. Hosts must define the configured Gate
+     * ability; authentication alone does not grant upload permission.
+     * Existing custom upload endpoints retain their own authorization.
+     */
+    'upload_route' => [
+        'guard' => 'web',
+        'ability' => 'tiptap-editor.upload',
+        'attempts_per_minute' => 20,
+        'additional_middleware' => [],
     ],
 
     /*
@@ -63,6 +80,13 @@ return [
     | normal production cron entry).
     |
     */
+
+    // All cooperating workers must use the same lock-capable cache store.
+    // Null selects Laravel's default cache store; the lease must outlast a batch.
+    'media_lock' => [
+        'store' => env('TIPTAP_EDITOR_MEDIA_LOCK_STORE'),
+        'seconds' => (int) env('TIPTAP_EDITOR_MEDIA_LOCK_SECONDS', 300),
+    ],
 
     'cleanup' => [
         'schedule' => env(
