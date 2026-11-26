@@ -38,7 +38,10 @@
         "check:bundle": "node --check dist/index.js && node tools/bundle-contract.cjs",
         "test:bundle": "node --test tools/bundle-contract.test.cjs",
         "test:consumer:contract": "node --test tools/consumer-contract.test.cjs",
-        "test:consumer": "node tools/run-consumer-compatibility.cjs"
+        "test:consumer": "node tools/run-consumer-compatibility.cjs",
+        "test:archive": "node --test tools/archive-contract.test.cjs",
+        "pack:verified": "node tools/run-archive-compatibility.cjs pack",
+        "check:archive": "node tools/run-archive-compatibility.cjs verify"
     },
     "peerDependencies": {
         "@tiptap/core": "^3.32.0",
