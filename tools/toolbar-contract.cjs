@@ -34,7 +34,7 @@ function inspectControls(file){
         const options=kind==='select'?childrenOf(n,'option').map(o=>({value:attr(o,'value',file),label:textContent(o)})):[];
         const open=ts.isJsxElement(n)?n.openingElement:n;
         assert.ok(!open.attributes.properties.some(ts.isJsxSpreadAttribute),`Unreviewed spread: ${label}`);
-        items.push({label,kind,handler,active:get('active'),disabled:get('disabled'),pressed:get('aria-pressed'),className:get('className'),value:get('value'),conditions:conditions(n,file),options});
+        items.push({label,kind,handler,active:get('active'),disabled:get('disabled'),pressed:get('aria-pressed'),mouseDown:get('onMouseDown'),className:get('className'),value:get('value'),conditions:conditions(n,file),options});
     });return items;
 }
 function callName(n){return ts.isCallExpression(n)?(ts.isPropertyAccessExpression(n.expression)?n.expression.name.text:ts.isIdentifier(n.expression)?n.expression.text:null):null;}

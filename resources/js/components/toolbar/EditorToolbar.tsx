@@ -113,17 +113,27 @@ export default function EditorToolbar({
         setNewsBlockDialogOpen,
     ] = useState(false)
 
-    const isInsideTable =
-        useEditorState({
-            editor,
-
-            selector: ({
-                editor: currentEditor,
-            }) =>
-                currentEditor.isActive(
-                    'table'
-                ),
-        })
+    // Selection-only transactions and stored marks must update formatting controls.
+    const formatting = useEditorState({
+        editor,
+        selector: ({ editor: currentEditor }) => ({
+            isInsideTable: currentEditor.isActive('table'),
+            bold: currentEditor.isActive('bold'),
+            canBold: currentEditor.isEditable && currentEditor.can().toggleBold(),
+            italic: currentEditor.isActive('italic'),
+            canItalic: currentEditor.isEditable && currentEditor.can().toggleItalic(),
+            underline: currentEditor.isActive('underline'),
+            canUnderline: currentEditor.isEditable && currentEditor.can().toggleUnderline(),
+            strike: currentEditor.isActive('strike'),
+            canStrike: currentEditor.isEditable && currentEditor.can().toggleStrike(),
+            subscript: currentEditor.isActive('subscript'),
+            canSubscript: currentEditor.isEditable && currentEditor.can().toggleSubscript(),
+            superscript: currentEditor.isActive('superscript'),
+            canSuperscript: currentEditor.isEditable && currentEditor.can().toggleSuperscript(),
+            canClear: currentEditor.isEditable && currentEditor.can().chain().clearNodes().unsetAllMarks().run(),
+        }),
+    })
+    const isInsideTable = formatting.isInsideTable
 
     return (
         <>
@@ -247,7 +257,9 @@ export default function EditorToolbar({
                     >
                 <ToolbarGroup>
                     <EditorButton
-                        active={editor.isActive('bold')}
+                        active={formatting.bold}
+                        disabled={!formatting.canBold}
+                        onMouseDown={event => event.preventDefault()}
                         tooltip="Bold"
                         onClick={() =>
                             editor
@@ -261,7 +273,9 @@ export default function EditorToolbar({
                     </EditorButton>
 
                     <EditorButton
-                        active={editor.isActive('italic')}
+                        active={formatting.italic}
+                        disabled={!formatting.canItalic}
+                        onMouseDown={event => event.preventDefault()}
                         tooltip="Italic"
                         onClick={() =>
                             editor
@@ -275,7 +289,9 @@ export default function EditorToolbar({
                     </EditorButton>
 
                     <EditorButton
-                        active={editor.isActive('underline')}
+                        active={formatting.underline}
+                        disabled={!formatting.canUnderline}
+                        onMouseDown={event => event.preventDefault()}
                         tooltip="Underline"
                         onClick={() =>
                             editor
@@ -289,7 +305,9 @@ export default function EditorToolbar({
                     </EditorButton>
 
                     <EditorButton
-                        active={editor.isActive('strike')}
+                        active={formatting.strike}
+                        disabled={!formatting.canStrike}
+                        onMouseDown={event => event.preventDefault()}
                         tooltip="Strike"
                         onClick={() =>
                             editor
@@ -303,7 +321,9 @@ export default function EditorToolbar({
                     </EditorButton>
 
                     <EditorButton
-                        active={editor.isActive('subscript')}
+                        active={formatting.subscript}
+                        disabled={!formatting.canSubscript}
+                        onMouseDown={event => event.preventDefault()}
                         tooltip="Subscript"
                         onClick={() =>
                             editor
@@ -317,7 +337,9 @@ export default function EditorToolbar({
                     </EditorButton>
 
                     <EditorButton
-                        active={editor.isActive('superscript')}
+                        active={formatting.superscript}
+                        disabled={!formatting.canSuperscript}
+                        onMouseDown={event => event.preventDefault()}
                         tooltip="Superscript"
                         onClick={() =>
                             editor
@@ -498,6 +520,8 @@ export default function EditorToolbar({
                 <ToolbarGroup>
                     <EditorButton
                         tooltip="Clear Formatting"
+                        disabled={!formatting.canClear}
+                        onMouseDown={event => event.preventDefault()}
                         onClick={clearFormatting}
                     >
                         <ClearIcon />

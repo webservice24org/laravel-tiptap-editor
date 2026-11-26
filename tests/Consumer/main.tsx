@@ -12,14 +12,20 @@ if (!Array.isArray(extensions) || extensions.length < 5) throw new Error('Extens
 function App() {
     const [value, setValue] = useState('<p>Consumer smoke</p>')
     const [changes, setChanges] = useState(0)
+    const [fixtureHtml, setFixtureHtml] = useState('<p>Format target</p>')
+    const [generation, setGeneration] = useState(0)
     const [mode, setMode] = useState<'named'|'default'|'hidden'>('named')
     const props: TiptapEditorProps = {value, minHeight: 240, onChange: html => {setValue(html);setChanges(c=>c+1)}}
     return <main>
         <div id="react-version">{React.version}</div>
         <button id="hide" onClick={()=>setMode('hidden')}>Unmount editor</button>
         <button id="show-default" onClick={()=>setMode('default')}>Mount default editor</button>
+        <label htmlFor="format-source">Formatting test source</label>
+        <input id="format-source" value={fixtureHtml} onChange={event=>setFixtureHtml(event.target.value)} />
+        <button id="format-reset" onClick={()=>{setValue(fixtureHtml);setChanges(0);setMode('named');setGeneration(n=>n+1)}}>Reset formatting fixture</button>
+        <output id="format-generation">{generation}</output>
         <output id="changes">{changes}</output><pre id="html">{value}</pre>
-        {mode==='named' ? <TiptapEditor key="named" {...props}/> : mode==='default' ? <DefaultEditor key="default" {...props}/> : null}
+        {mode==='named' ? <TiptapEditor key={`named-${generation}`} {...props}/> : mode==='default' ? <DefaultEditor key={`default-${generation}`} {...props}/> : null}
     </main>
 }
 createRoot(document.getElementById('root')!).render(<App/>)

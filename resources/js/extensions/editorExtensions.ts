@@ -81,9 +81,10 @@ export function createEditorExtensions({
             ],
         }),
 
-        Subscript,
+        // Both marks are installed together; one baseline position per character.
+        Subscript.extend({ excludes: 'superscript' }),
 
-        Superscript,
+        Superscript.extend({ excludes: 'subscript' }),
 
         ImageFigure.configure({
             imageUploadUrl,

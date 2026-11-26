@@ -15,7 +15,7 @@ interface EditorButtonProps
 
 export default function EditorButton({
     children,
-    active = false,
+    active,
     disabled = false,
     tooltip,
     className,
@@ -47,11 +47,7 @@ export default function EditorButton({
             aria-label={
                 tooltip
             }
-            aria-pressed={
-                active
-                    ? true
-                    : undefined
-            }
+            aria-pressed={active}
         >
             {children}
         </button>
