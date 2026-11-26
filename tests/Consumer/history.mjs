@@ -38,7 +38,7 @@ export async function runHistory(page, editor) {
     async function pressed(name,value){await page.waitForFunction(({name,value})=>document.querySelector(`button[aria-label="${name}"]`)?.getAttribute('aria-pressed')===String(value),{name,value})}
     async function check(name,fn){
         try{await fn();checks.push(name);console.log('History passed: '+name)}catch(error){
-            const diagnostics=await page.evaluate(()=>({html:document.querySelector('.mw-tiptap-content')?.innerHTML,saved:document.querySelector('#html')?.textContent,changes:document.querySelector('#changes')?.textContent,selection:getSelection()?.toString(),focus:document.activeElement?.outerHTML.slice(0,400),buttons:[...document.querySelectorAll('button[aria-label]')].map(b=>({name:b.getAttribute('aria-label'),pressed:b.getAttribute('aria-pressed'),disabled:b.disabled}))})).catch(()=>null)
+            const diagnostics=await page.evaluate(()=>({html:document.querySelector('.mw-tiptap-content')?.innerHTML,saved:document.querySelector('#html')?.textContent,changes:document.querySelector('#changes')?.textContent,selection:getSelection()?.toString(),focus:document.activeElement?.outerHTML.slice(0,400),historyEvents:window.__historyIsolationEvents??[],buttons:[...document.querySelectorAll('button[aria-label]')].map(b=>({name:b.getAttribute('aria-label'),pressed:b.getAttribute('aria-pressed'),disabled:b.disabled}))})).catch(()=>null)
             console.error('History diagnostics: '+JSON.stringify(diagnostics));throw Error('History failed: '+name,{cause:error})
         }
     }
@@ -105,8 +105,36 @@ export async function runHistory(page, editor) {
     await check('history shortcuts outside editor',async()=>{
         await reset();await selectBlocks(editor,'p');await page.keyboard.insertText('X');await plain('AXB');await availability(true,false)
         const html=await editor.innerHTML(),saved=await page.locator('#html').textContent(),count=await page.locator('#changes').textContent()
-        await page.locator('#format-source').focus();await key('KeyZ');await key('Shift+KeyZ');await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));assert.equal(await page.evaluate(()=>document.activeElement?.id),'format-source')
-        assert.equal(await editor.innerHTML(),html);assert.equal(await page.locator('#html').textContent(),saved);assert.equal(await page.locator('#changes').textContent(),count);await availability(true,false)
+        // Observe native delivery, without cancelling or simulating any input.
+        await page.evaluate(()=>{
+            window.__historyIsolationEvents=[]
+            window.__historyIsolationListener=event=>{
+                if(!['historyUndo','historyRedo'].includes(event.inputType))return
+                const item={type:event.inputType,target:event.target?.id||event.target?.className,focus:document.activeElement?.id||document.activeElement?.className,cancelable:event.cancelable,trusted:event.isTrusted}
+                item.prevented=event.defaultPrevented;window.__historyIsolationEvents.push(item)
+            }
+            document.addEventListener('beforeinput',window.__historyIsolationListener)
+        })
+        async function unchanged(focusId){
+            await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))
+            assert.equal(await page.evaluate(()=>document.activeElement?.id),focusId)
+            assert.equal(await editor.innerHTML(),html);assert.equal(await page.locator('#html').textContent(),saved);assert.equal(await page.locator('#changes').textContent(),count);await availability(true,false)
+        }
+        try {
+            await page.locator('#format-source').focus();await unchanged('format-source')
+            for(const shortcut of ['KeyZ','Shift+KeyZ','KeyY']){await key(shortcut);await unchanged('format-source')}
+            // A real edit in an independent native host input must retain its own undo/redo.
+            const host=page.locator('#history-host-input');await host.focus();await page.keyboard.press('End')
+            const original=await host.inputValue();assert.equal(original,'Host')
+            await page.keyboard.insertText('X');assert.equal(await host.inputValue(),'HostX');await unchanged('history-host-input')
+            await key('KeyZ');assert.equal(await host.inputValue(),'Host');await unchanged('history-host-input')
+            await key('Shift+KeyZ');assert.equal(await host.inputValue(),'HostX');await unchanged('history-host-input')
+        } finally {
+            await page.evaluate(()=>document.removeEventListener('beforeinput',window.__historyIsolationListener))
+        }
+        // The original editor history must still be usable after focus returns.
+        await selectBlocks(editor,'p');await key('KeyZ');await plain('AB');await availability(false,true)
+        await key('Shift+KeyZ');await plain('AXB');await availability(true,false)
     })
     assert.deepEqual(checks,expectedHistoryChecks);return {status:'passed',checks}
 }

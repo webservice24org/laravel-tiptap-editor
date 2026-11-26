@@ -30,6 +30,20 @@ import type {
 
 import '../../css/editor.css'
 
+// Chromium can route native history events to the last edited DOM even when
+// another input owns focus. Stop only those events delivered to this editor.
+function guardUnfocusedHistory(
+    view: { hasFocus(): boolean },
+    event: Event,
+): boolean {
+    const inputType = (event as InputEvent).inputType
+    if (inputType !== 'historyUndo' && inputType !== 'historyRedo') return false
+    if (view.hasFocus()) return false
+    event.preventDefault()
+    // Returning true also prevents ProseMirror's history plugin from handling it.
+    return true
+}
+
 export default function TiptapEditor({
     value = '',
     onChange,
@@ -79,6 +93,9 @@ export default function TiptapEditor({
                 ),
 
             editorProps: {
+                handleDOMEvents: {
+                    beforeinput: guardUnfocusedHistory,
+                },
                 attributes: {
                     class:
                         'mw-tiptap-content',

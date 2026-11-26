@@ -24,6 +24,8 @@ function App() {
         <label htmlFor="format-source">Formatting test source</label>
         <input id="format-source" value={fixtureHtml} onChange={event=>setFixtureHtml(event.target.value)} />
         <button id="format-reset" onClick={()=>{setValue(fixtureHtml);setChanges(0);setMode('named');setGeneration(n=>n+1)}}>Reset formatting fixture</button>
+        <label htmlFor="history-host-input">Independent host history input</label>
+        <input id="history-host-input" defaultValue="Host" />
         <output id="format-generation">{generation}</output>
         <output id="changes">{changes}</output><pre id="html">{value}</pre>
         {mode==='named' ? <TiptapEditor key={`named-${generation}`} {...props}/> : mode==='default' ? <DefaultEditor key={`default-${generation}`} {...props}/> : null}
