@@ -18,6 +18,7 @@ function App() {
     const props: TiptapEditorProps = {value, minHeight: 240, onChange: html => {setValue(html);setChanges(c=>c+1)}}
     return <main>
         <div id="react-version">{React.version}</div>
+        <button id="host-replace" onClick={()=>setValue('<p>Host replaced</p>')}>Replace host value</button>
         <button id="hide" onClick={()=>setMode('hidden')}>Unmount editor</button>
         <button id="show-default" onClick={()=>setMode('default')}>Mount default editor</button>
         <label htmlFor="format-source">Formatting test source</label>

@@ -1,276 +1,83 @@
-import {
-    useEffect,
-    useState,
-} from 'react'
-
-import type {
-    Editor,
-} from '@tiptap/react'
-
+import { useEffect, useState } from 'react'
+import { CommandManager, getMarkRange } from '@tiptap/core'
+import { TextSelection } from '@tiptap/pm/state'
+import type { Editor } from '@tiptap/react'
+import { normalizeLinkUrl } from '../../utils/sanitizeHtml'
 import Dialog from './Dialog'
 
 interface LinkDialogProps {
     editor: Editor
-
     open: boolean
-
     onClose: () => void
 }
 
-function normalizeUrl(
-    value: string
-): string {
-    const url = value.trim()
-
-    if (!url) {
-        return ''
-    }
-
-    if (
-        url.startsWith('/') ||
-        url.startsWith('#') ||
-        url.startsWith('mailto:') ||
-        url.startsWith('tel:')
-    ) {
-        return url
-    }
-
-    if (
-        /^https?:\/\//i.test(url)
-    ) {
-        return url
-    }
-
-    return `https://${url}`
+export function canEditLink(editor: Editor): boolean {
+    if (!editor.isEditable || editor.isDestroyed) return false
+    const selection = editor.state.selection
+    return selection instanceof TextSelection && selection.$from.sameParent(selection.$to)
+        && editor.can().setLink({ href: 'https://example.com/' })
 }
 
-function isSafeUrl(
-    value: string
-): boolean {
-    const url = value
-        .trim()
-        .toLowerCase()
-
-    if (!url) {
-        return false
-    }
-
-    const blockedProtocols = [
-        'javascript:',
-        'data:',
-        'vbscript:',
-    ]
-
-    return !blockedProtocols.some(
-        (protocol) =>
-            url.startsWith(protocol)
-    )
+function captureLinkSelection(editor: Editor) {
+    if (!canEditLink(editor)) return null
+    const { doc, selection } = editor.state
+    const attrs = editor.getAttributes('link')
+    const active = editor.isActive('link')
+    const range = selection.empty && active ? getMarkRange(selection.$from, editor.schema.marks.link, attrs) : undefined
+    const from = range?.from ?? selection.from
+    const to = range?.to ?? selection.to
+    return { doc, from, to, active, text: doc.textBetween(from, to), href: typeof attrs.href === 'string' ? attrs.href : '', newTab: attrs.target === '_blank' || !attrs.href }
 }
 
-export default function LinkDialog({
-    editor,
-    open,
-    onClose,
-}: LinkDialogProps) {
-    const [
-        originalText,
-        setOriginalText,
-    ] = useState('')
-
-    const [text, setText] =
-        useState('')
-
-    const [url, setUrl] =
-        useState('')
-
-    const [
-        openInNewTab,
-        setOpenInNewTab,
-    ] = useState(true)
-
-    const [error, setError] =
-        useState('')
-
-    const linkActive =
-        editor.isActive('link')
+export default function LinkDialog({ editor, open, onClose }: LinkDialogProps) {
+    const [snapshot, setSnapshot] = useState<ReturnType<typeof captureLinkSelection>>(null)
+    const [text, setText] = useState('')
+    const [url, setUrl] = useState('')
+    const [openInNewTab, setOpenInNewTab] = useState(true)
+    const [error, setError] = useState('')
+    const linkActive = snapshot?.active ?? false
 
     useEffect(() => {
-        if (!open) {
-            return
-        }
-
-        const {
-            from,
-            to,
-        } = editor.state.selection
-
-        const selectedText =
-            editor.state.doc.textBetween(
-                from,
-                to,
-                ' '
-            )
-
-        const linkAttributes =
-            editor.getAttributes('link')
-
-        setText(selectedText)
-        setOriginalText(selectedText)
-
-        setUrl(
-            linkAttributes.href ?? ''
-        )
-
-        setOpenInNewTab(
-            linkAttributes.target ===
-                '_blank' ||
-                !linkAttributes.href
-        )
-
-        setError('')
+        if (!open) { setSnapshot(null); return }
+        const captured = captureLinkSelection(editor)
+        setSnapshot(captured)
+        setText(captured?.text ?? '')
+        setUrl(captured?.href ?? '')
+        setOpenInNewTab(captured?.newTab ?? true)
+        setError(captured ? '' : 'Select editable text before opening the link dialog.')
     }, [open, editor])
 
     const handleInsert = () => {
-        if (!isSafeUrl(url)) {
-            setError(
-                'Please enter a valid link.'
-            )
-
-            return
+        const href = normalizeLinkUrl(url, true)
+        if (!href) { setError('Enter an HTTP(S) URL, domain, root-relative path or fragment.'); return }
+        if (!snapshot || editor.isDestroyed || !editor.isEditable || editor.state.doc !== snapshot.doc) {
+            setError('The document changed. Close and reopen the link dialog.'); return
         }
-
-        const normalizedUrl =
-            normalizeUrl(url)
-
-        const target =
-            openInNewTab
-                ? '_blank'
-                : null
-
-        const rel =
-            openInNewTab
-                ? 'noopener noreferrer'
-                : null
-
-        const {
-            empty,
-        } = editor.state.selection
-
-        /*
-         * Existing link.
-         */
-
-        if (editor.isActive('link')) {
-            editor
-                .chain()
-                .focus()
-                .extendMarkRange('link')
-                .setLink({
-                    href: normalizedUrl,
-                    target,
-                    rel,
-                })
-                .run()
-
-            onClose()
-
-            return
+        const attrs = { href, target: openInNewTab ? '_blank' : null, rel: openInNewTab ? 'noopener noreferrer' : null }
+        const range = { from: snapshot.from, to: snapshot.to }
+        let applied: boolean
+        if (range.from !== range.to) {
+            const scratch = new CommandManager({ editor }).createChain(editor.state.tr)
+            if (!scratch.setTextSelection(range).setLink(attrs).run()) { setError('Link is unavailable for this selection.'); return }
+            applied = editor.chain().focus().setTextSelection(range).setLink(attrs).run()
+        } else {
+            const content = { type: 'text', text: text.trim() || href, marks: [{ type: 'link', attrs }] }
+            if (!editor.can().insertContentAt(range.from, content)) { setError('Link cannot be inserted here.'); return }
+            applied = editor.chain().focus().insertContentAt(range.from, content).run()
         }
-
-        /*
-         * Selected text.
-         */
-
-        if (!empty) {
-            if (
-                text.trim() &&
-                text !== originalText
-            ) {
-                editor
-                    .chain()
-                    .focus()
-                    .insertContent({
-                        type: 'text',
-
-                        text: text.trim(),
-
-                        marks: [
-                            {
-                                type: 'link',
-
-                                attrs: {
-                                    href:
-                                        normalizedUrl,
-
-                                    target,
-
-                                    rel,
-                                },
-                            },
-                        ],
-                    })
-                    .run()
-            } else {
-                editor
-                    .chain()
-                    .focus()
-                    .setLink({
-                        href: normalizedUrl,
-                        target,
-                        rel,
-                    })
-                    .run()
-            }
-
-            onClose()
-
-            return
-        }
-
-        /*
-         * No selection.
-         *
-         * Insert link text directly.
-         */
-
-        const linkText =
-            text.trim() ||
-            normalizedUrl
-
-        editor
-            .chain()
-            .focus()
-            .insertContent({
-                type: 'text',
-
-                text: linkText,
-
-                marks: [
-                    {
-                        type: 'link',
-
-                        attrs: {
-                            href: normalizedUrl,
-                            target,
-                            rel,
-                        },
-                    },
-                ],
-            })
-            .run()
-
+        if (!applied) { setError('Link command was not applied.'); return }
         onClose()
     }
 
     const handleRemove = () => {
-        editor
-            .chain()
-            .focus()
-            .extendMarkRange('link')
-            .unsetLink()
-            .run()
-
-        onClose()
+        if (!snapshot || editor.isDestroyed || !editor.isEditable || editor.state.doc !== snapshot.doc) {
+            setError('The document changed. Close and reopen the link dialog.'); return
+        }
+        const range = { from: snapshot.from, to: snapshot.to }
+        const scratch = new CommandManager({ editor }).createChain(editor.state.tr)
+        if (!scratch.setTextSelection(range).unsetLink().run()) { setError('Link cannot be removed.'); return }
+        if (editor.chain().focus().setTextSelection(range).unsetLink().run()) onClose()
+        else setError('Link command was not applied.')
     }
 
     return (
@@ -282,7 +89,7 @@ export default function LinkDialog({
                     ? 'Edit Link'
                     : 'Insert Link'
             }
-            description="Add a link to selected text or insert a new linked text."
+            description="Link selected text without replacing its formatting, or insert new linked text at the cursor."
         >
             <div className="mw-dialog-body">
                 <div className="mw-form-group">
@@ -298,6 +105,7 @@ export default function LinkDialog({
                         type="text"
                         className="mw-form-input"
                         value={text}
+                        readOnly={!!snapshot && snapshot.from !== snapshot.to}
                         onChange={(event) =>
                             setText(
                                 event.target.value
@@ -387,6 +195,7 @@ export default function LinkDialog({
                     <button
                         type="button"
                         className="mw-dialog-button mw-dialog-button-primary"
+                        disabled={!snapshot}
                         onClick={
                             handleInsert
                         }

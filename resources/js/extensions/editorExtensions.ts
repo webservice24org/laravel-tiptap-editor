@@ -1,3 +1,6 @@
+import { Mark } from '@tiptap/core'
+import { isTextPreset, normalizeLinkUrl, type TextPresetProperty } from '../utils/sanitizeHtml'
+
 import StarterKit
     from '@tiptap/starter-kit'
 
@@ -36,6 +39,27 @@ import type {
     EditorExtensionOptions,
 } from '../types/editor'
 
+function presetMark(name: string, property: TextPresetProperty) {
+    return Mark.create({
+        name,
+        addAttributes() {
+            return { value: { default: null, rendered: false } }
+        },
+        parseHTML() {
+            return [{ tag: 'span[style]', consuming: false, getAttrs: (node: HTMLElement) => {
+                const value = (node as HTMLElement).style.getPropertyValue(property).trim()
+                return isTextPreset(property, value) ? { value } : false
+            } }]
+        },
+        renderHTML({ mark }) {
+            const value = mark.attrs.value
+            return typeof value === 'string' && isTextPreset(property, value)
+                ? ['span', { style: `${property}: ${value}` }, 0]
+                : ['span', {}, 0]
+        },
+    })
+}
+
 export function createEditorExtensions({
     imageUploadUrl =
         '/tiptap-editor/media',
@@ -64,8 +88,16 @@ export function createEditorExtensions({
 
                 defaultProtocol:
                     'https',
+                // Linkify supplies bare hosts to its validation callback.
+                isAllowedUri: (url, context) => context.defaultValidate(url) && Boolean(normalizeLinkUrl(url, true)),
+                shouldAutoLink: url => Boolean(normalizeLinkUrl(url, true)) &&
+                    (/^https?:\/\//i.test(url) || (/^[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[/?#]|$)/i.test(url) && !/^\d{1,3}(?:\.\d{1,3}){3}(?:[/?#]|$)/.test(url))),
             },
         }),
+
+        presetMark('mwTextColor', 'color'),
+        presetMark('mwFontSize', 'font-size'),
+        presetMark('mwFontFamily', 'font-family'),
 
         TextAlign.configure({
             types: [

@@ -57,7 +57,7 @@ final class EditorHtmlPolicy
         return $youtube || $vimeo ? $value : null;
     }
 
-    public static function style(string $style): ?string
+    public static function style(string $style, ?string $tag = null): ?string
     {
         if (strlen($style) > 8192) {
             return null;
@@ -73,6 +73,8 @@ final class EditorHtmlPolicy
                 continue;
             }
             $valid = match ($name) {
+                'font-size' => $tag === 'span' && in_array($value, ['12px', '16px', '20px', '24px'], true),
+                'font-family' => $tag === 'span' && in_array($value, ['sans-serif', 'serif', 'monospace'], true),
                 'text-align' => self::oneOf($value, ['left', 'center', 'right', 'justify', 'start', 'end']),
                 'vertical-align' => self::oneOf($value, ['top', 'middle', 'bottom', 'baseline']),
                 'clear' => self::oneOf($value, ['none', 'left', 'right', 'both']),
@@ -105,7 +107,7 @@ final class EditorHtmlPolicy
             return $classes === [] ? null : implode(' ', $classes);
         }
         if ($name === 'style') {
-            return self::style($value);
+            return self::style($value, $tag);
         }
         if ($name === 'title' || ($name === 'alt' && $tag === 'img')) {
             return $value;

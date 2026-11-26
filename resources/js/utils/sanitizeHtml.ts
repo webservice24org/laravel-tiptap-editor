@@ -99,6 +99,34 @@ const SAFE_IFRAME_HOSTS = new Set([
     'player.vimeo.com',
 ])
 
+// Link policy is deliberately narrower than media URL normalization.
+// Only explicit web URLs, same-site root paths and fragments are persisted.
+export function normalizeLinkUrl(value: string, allowBareHost = false): string {
+    let url = value.replace(/^ +| +$/g, '')
+    if (!url || url.length > 4096 || /[\p{C}\p{Z}\\]/u.test(url)) return ''
+    if (url.startsWith('#') || (url.startsWith('/') && !url.startsWith('//'))) return url
+    if (allowBareHost && /^[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[/?#]|$)/i.test(url)) url = `https://${url}`
+    if (!/^https?:\/\//i.test(url) || !/^https?:\/\/[^/?#]+/i.test(url) || /^https?:\/\/[^/?#]*@/i.test(url)) return ''
+    try {
+        const parsed = new URL(url)
+        if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname || parsed.username || parsed.password) return ''
+        return parsed.toString()
+    } catch {
+        return ''
+    }
+}
+
+// Fixed presets avoid arbitrary CSS and remote font loading.
+export const TEXT_PRESETS = {
+    color: ['black', 'red', 'blue', 'green', 'purple'],
+    'font-size': ['12px', '16px', '20px', '24px'],
+    'font-family': ['sans-serif', 'serif', 'monospace'],
+} as const
+export type TextPresetProperty = keyof typeof TEXT_PRESETS
+export function isTextPreset(property: TextPresetProperty, value: string): boolean {
+    return (TEXT_PRESETS[property] as readonly string[]).includes(value)
+}
+
 const safeUrl = (
     value: string,
     allowRelative = true
@@ -144,7 +172,8 @@ const safeUrl = (
 }
 
 const sanitizeStyle = (
-    style: string
+    style: string,
+    tag: string
 ) => {
     const allowedProperties =
         new Set([
@@ -199,6 +228,10 @@ const sanitizeStyle = (
                             separator + 1
                         )
                         .trim()
+
+                if (property === 'font-size' || property === 'font-family') {
+                    return tag === 'span' && isTextPreset(property, value) ? `${property}: ${value}` : ''
+                }
 
                 if (
                     !allowedProperties.has(
@@ -255,11 +288,7 @@ DOMPurify.addHook(
         if (
             name === 'href'
         ) {
-            const safe =
-                safeUrl(
-                    value,
-                    true
-                )
+            const safe = node.nodeName.toLowerCase() === 'a' ? normalizeLinkUrl(value) : ''
 
             if (!safe) {
                 data.keepAttr = false
@@ -340,7 +369,7 @@ DOMPurify.addHook(
         ) {
             const clean =
                 sanitizeStyle(
-                    value
+                    value, node.nodeName.toLowerCase()
                 )
 
             if (!clean) {
@@ -353,6 +382,25 @@ DOMPurify.addHook(
         }
     }
 )
+
+// Normalize link target/rel after DOMPurify has checked attributes.
+DOMPurify.addHook('afterSanitizeAttributes', node => {
+    if (node.nodeName.toLowerCase() !== 'a') return
+    const link = node as Element
+    if (!link.hasAttribute('href')) {
+        link.removeAttribute('target')
+        link.removeAttribute('rel')
+        return
+    }
+    const target = link.getAttribute('target')?.toLowerCase()
+    if (target === '_blank' || target === '_self') link.setAttribute('target', target)
+    else link.removeAttribute('target')
+    const tokens = (link.getAttribute('rel') ?? '').toLowerCase().split(/\s+/)
+        .filter(token => ['noopener', 'noreferrer', 'nofollow', 'ugc', 'sponsored', 'external'].includes(token))
+    if (target === '_blank') tokens.push('noopener', 'noreferrer')
+    if (tokens.length) link.setAttribute('rel', [...new Set(tokens)].join(' '))
+    else link.removeAttribute('rel')
+})
 
 export const sanitizeEditorHtml = (
     html: string

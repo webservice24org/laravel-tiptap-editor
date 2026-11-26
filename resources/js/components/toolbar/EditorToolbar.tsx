@@ -12,7 +12,8 @@ import { CommandManager, type ChainedCommands } from '@tiptap/core'
 import EditorButton from './EditorButton'
 import ToolbarGroup from './ToolbarGroup'
 import FormatDropdown from './FormatDropdown'
-import LinkDialog from '../dialogs/LinkDialog'
+import LinkDialog, { canEditLink } from '../dialogs/LinkDialog'
+import { isTextPreset, type TextPresetProperty } from '../../utils/sanitizeHtml'
 import ImageDialog from '../dialogs/ImageDialog'
 
 import type { ImageUploadResult } from '../../types/media'
@@ -139,6 +140,21 @@ function applyAlignment(editor: Editor, alignment: Alignment): boolean {
     return editor.chain().focus().setTextAlign(alignment).run()
 }
 
+type PresetMark = 'mwTextColor' | 'mwFontSize' | 'mwFontFamily'
+function canSetPreset(editor: Editor, mark: PresetMark): boolean {
+    return editor.isEditable && !editor.isDestroyed && editor.can().setMark(mark)
+}
+function presetValue(editor: Editor, mark: PresetMark): string {
+    const value = editor.getAttributes(mark).value
+    return typeof value === 'string' && editor.isActive(mark, { value }) ? value : ''
+}
+function applyPreset(editor: Editor, mark: PresetMark, property: TextPresetProperty, value: string): boolean {
+    if (!canSetPreset(editor, mark)) return false
+    if (value === 'default') return editor.chain().focus().unsetMark(mark).run()
+    if (!isTextPreset(property, value)) return false
+    return editor.chain().focus().setMark(mark, { value }).run()
+}
+
 interface EditorToolbarProps {
     editor: Editor
 
@@ -230,6 +246,15 @@ export default function EditorToolbar({
             canAlignCenter: canAlignSelection(currentEditor, 'center'),
             canAlignRight: canAlignSelection(currentEditor, 'right'),
             canAlignJustify: canAlignSelection(currentEditor, 'justify'),
+            link: currentEditor.isActive('link'),
+            canLink: canEditLink(currentEditor),
+            canUnlink: currentEditor.isEditable && currentEditor.isActive('link') && currentEditor.can().unsetLink(),
+            textColor: presetValue(currentEditor, 'mwTextColor'),
+            fontSize: presetValue(currentEditor, 'mwFontSize'),
+            fontFamily: presetValue(currentEditor, 'mwFontFamily'),
+            canTextColor: canSetPreset(currentEditor, 'mwTextColor'),
+            canFontSize: canSetPreset(currentEditor, 'mwFontSize'),
+            canFontFamily: canSetPreset(currentEditor, 'mwFontFamily'),
             blockquote: currentEditor.isActive('blockquote'),
             canBlockquote: currentEditor.isEditable && currentEditor.can().toggleBlockquote(),
             canHorizontalRule: currentEditor.isEditable && currentEditor.can().setHorizontalRule(),
@@ -537,25 +562,60 @@ export default function EditorToolbar({
                 <div className="mw-tiptap-toolbar-separator" />
 
                 <ToolbarGroup>
+                    <select className="mw-tiptap-format-select" aria-label="Text color"
+                        value={formatting.textColor} disabled={!formatting.canTextColor}
+                        onChange={event => applyPreset(editor, 'mwTextColor', 'color', event.target.value)}>
+                        <option value="" disabled>Text color / mixed</option>
+                        <option value="default">Default</option>
+                        <option value="black">Black</option>
+                        <option value="red">Red</option>
+                        <option value="blue">Blue</option>
+                        <option value="green">Green</option>
+                        <option value="purple">Purple</option>
+                    </select>
+                    <select className="mw-tiptap-format-select" aria-label="Font size"
+                        value={formatting.fontSize} disabled={!formatting.canFontSize}
+                        onChange={event => applyPreset(editor, 'mwFontSize', 'font-size', event.target.value)}>
+                        <option value="" disabled>Font size / mixed</option>
+                        <option value="default">Default</option>
+                        <option value="12px">12 px</option>
+                        <option value="16px">16 px</option>
+                        <option value="20px">20 px</option>
+                        <option value="24px">24 px</option>
+                    </select>
+                    <select className="mw-tiptap-format-select" aria-label="Font family"
+                        value={formatting.fontFamily} disabled={!formatting.canFontFamily}
+                        onChange={event => applyPreset(editor, 'mwFontFamily', 'font-family', event.target.value)}>
+                        <option value="" disabled>Font family / mixed</option>
+                        <option value="default">Default</option>
+                        <option value="sans-serif">Sans serif</option>
+                        <option value="serif">Serif</option>
+                        <option value="monospace">Monospace</option>
+                    </select>
+                </ToolbarGroup>
+
+                <div className="mw-tiptap-toolbar-separator" />
+
+                <ToolbarGroup>
                     <EditorButton
-                        active={editor.isActive('link')}
+                        active={formatting.link}
+                        disabled={!formatting.canLink}
+                        onMouseDown={event => event.preventDefault()}
                         tooltip="Insert or Edit Link"
-                        onClick={() => setLinkDialogOpen(true)}
+                        onClick={() => { if (canEditLink(editor)) setLinkDialogOpen(true) }}
                     >
                         <LinkIcon />
                     </EditorButton>
 
                     <EditorButton
-                        disabled={!editor.isActive('link')}
+                        disabled={!formatting.canUnlink}
+                        onMouseDown={event => event.preventDefault()}
                         tooltip="Remove Link"
-                        onClick={() =>
-                            editor
-                                .chain()
-                                .focus()
-                                .extendMarkRange('link')
-                                .unsetLink()
-                                .run()
-                        }
+                        onClick={() => {
+                            if (editor.isEditable && editor.isActive('link') && editor.can().unsetLink()) {
+                                editor.chain().focus().unsetLink().run()
+                            }
+                        }}
                     >
                         <UnlinkIcon />
                     </EditorButton>

@@ -10,20 +10,22 @@
         "chain.sinkListItem('listItem').run()",
         "chain.liftListItem('listItem').run()",
         "editor.chain().focus().setTextAlign(alignment).run()",
+        "editor.chain().focus().unsetMark(mark).run()",
+        "editor.chain().focus().setMark(mark, { value }).run()",
         "editor\n            .chain()\n            .focus()\n            .clearNodes()\n            .unsetAllMarks()\n            .run()",
         "currentEditor.can().chain().clearNodes().unsetAllMarks().run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleBold()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleItalic()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleUnderline()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleStrike()\n                                .run()",
-        "editor\n                                .chain()\n                                .focus()\n                                .extendMarkRange('link')\n                                .unsetLink()\n                                .run()",
+        "editor.chain().focus().unsetLink().run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleBlockquote()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .setHorizontalRule()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .undo()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .redo()\n                                .run()"
       ],
       "subscriptions": [
-        "useEditorState({\n        editor,\n        selector: ({ editor: currentEditor }) => ({\n            isInsideTable: currentEditor.isActive('table'),\n            bold: currentEditor.isActive('bold'),\n            canBold: currentEditor.isEditable && currentEditor.can().toggleBold(),\n            italic: currentEditor.isActive('italic'),\n            canItalic: currentEditor.isEditable && currentEditor.can().toggleItalic(),\n            underline: currentEditor.isActive('underline'),\n            canUnderline: currentEditor.isEditable && currentEditor.can().toggleUnderline(),\n            strike: currentEditor.isActive('strike'),\n            canStrike: currentEditor.isEditable && currentEditor.can().toggleStrike(),\n            subscript: currentEditor.isActive('subscript'),\n            canSubscript: canToggleScript(currentEditor, 'subscript'),\n            superscript: currentEditor.isActive('superscript'),\n            canSuperscript: canToggleScript(currentEditor, 'superscript'),\n            bulletList: currentEditor.isActive('bulletList'),\n            orderedList: currentEditor.isActive('orderedList'),\n            canBulletList: canListAction(currentEditor, 'bullet'),\n            canOrderedList: canListAction(currentEditor, 'ordered'),\n            canIndentList: canListAction(currentEditor, 'indent'),\n            canOutdentList: canListAction(currentEditor, 'outdent'),\n            alignLeft: currentEditor.isActive({ textAlign: 'left' }),\n            alignCenter: currentEditor.isActive({ textAlign: 'center' }),\n            alignRight: currentEditor.isActive({ textAlign: 'right' }),\n            alignJustify: currentEditor.isActive({ textAlign: 'justify' }),\n            canAlignLeft: canAlignSelection(currentEditor, 'left'),\n            canAlignCenter: canAlignSelection(currentEditor, 'center'),\n            canAlignRight: canAlignSelection(currentEditor, 'right'),\n            canAlignJustify: canAlignSelection(currentEditor, 'justify'),\n            blockquote: currentEditor.isActive('blockquote'),\n            canBlockquote: currentEditor.isEditable && currentEditor.can().toggleBlockquote(),\n            canHorizontalRule: currentEditor.isEditable && currentEditor.can().setHorizontalRule(),\n            canClear: currentEditor.isEditable && currentEditor.can().chain().clearNodes().unsetAllMarks().run(),\n        }),\n    })"
+        "useEditorState({\n        editor,\n        selector: ({ editor: currentEditor }) => ({\n            isInsideTable: currentEditor.isActive('table'),\n            bold: currentEditor.isActive('bold'),\n            canBold: currentEditor.isEditable && currentEditor.can().toggleBold(),\n            italic: currentEditor.isActive('italic'),\n            canItalic: currentEditor.isEditable && currentEditor.can().toggleItalic(),\n            underline: currentEditor.isActive('underline'),\n            canUnderline: currentEditor.isEditable && currentEditor.can().toggleUnderline(),\n            strike: currentEditor.isActive('strike'),\n            canStrike: currentEditor.isEditable && currentEditor.can().toggleStrike(),\n            subscript: currentEditor.isActive('subscript'),\n            canSubscript: canToggleScript(currentEditor, 'subscript'),\n            superscript: currentEditor.isActive('superscript'),\n            canSuperscript: canToggleScript(currentEditor, 'superscript'),\n            bulletList: currentEditor.isActive('bulletList'),\n            orderedList: currentEditor.isActive('orderedList'),\n            canBulletList: canListAction(currentEditor, 'bullet'),\n            canOrderedList: canListAction(currentEditor, 'ordered'),\n            canIndentList: canListAction(currentEditor, 'indent'),\n            canOutdentList: canListAction(currentEditor, 'outdent'),\n            alignLeft: currentEditor.isActive({ textAlign: 'left' }),\n            alignCenter: currentEditor.isActive({ textAlign: 'center' }),\n            alignRight: currentEditor.isActive({ textAlign: 'right' }),\n            alignJustify: currentEditor.isActive({ textAlign: 'justify' }),\n            canAlignLeft: canAlignSelection(currentEditor, 'left'),\n            canAlignCenter: canAlignSelection(currentEditor, 'center'),\n            canAlignRight: canAlignSelection(currentEditor, 'right'),\n            canAlignJustify: canAlignSelection(currentEditor, 'justify'),\n            link: currentEditor.isActive('link'),\n            canLink: canEditLink(currentEditor),\n            canUnlink: currentEditor.isEditable && currentEditor.isActive('link') && currentEditor.can().unsetLink(),\n            textColor: presetValue(currentEditor, 'mwTextColor'),\n            fontSize: presetValue(currentEditor, 'mwFontSize'),\n            fontFamily: presetValue(currentEditor, 'mwFontFamily'),\n            canTextColor: canSetPreset(currentEditor, 'mwTextColor'),\n            canFontSize: canSetPreset(currentEditor, 'mwFontSize'),\n            canFontFamily: canSetPreset(currentEditor, 'mwFontFamily'),\n            blockquote: currentEditor.isActive('blockquote'),\n            canBlockquote: currentEditor.isEditable && currentEditor.can().toggleBlockquote(),\n            canHorizontalRule: currentEditor.isEditable && currentEditor.can().setHorizontalRule(),\n            canClear: currentEditor.isEditable && currentEditor.can().chain().clearNodes().unsetAllMarks().run(),\n        }),\n    })"
       ],
       "helpers": [
         {
@@ -53,6 +55,18 @@
         {
           "name": "applyAlignment",
           "expression": "function applyAlignment(editor: Editor, alignment: Alignment): boolean {\n    if (!canAlignSelection(editor, alignment)) return false\n    return editor.chain().focus().setTextAlign(alignment).run()\n}"
+        },
+        {
+          "name": "canSetPreset",
+          "expression": "function canSetPreset(editor: Editor, mark: PresetMark): boolean {\n    return editor.isEditable && !editor.isDestroyed && editor.can().setMark(mark)\n}"
+        },
+        {
+          "name": "presetValue",
+          "expression": "function presetValue(editor: Editor, mark: PresetMark): string {\n    const value = editor.getAttributes(mark).value\n    return typeof value === 'string' && editor.isActive(mark, { value }) ? value : ''\n}"
+        },
+        {
+          "name": "applyPreset",
+          "expression": "function applyPreset(editor: Editor, mark: PresetMark, property: TextPresetProperty, value: string): boolean {\n    if (!canSetPreset(editor, mark)) return false\n    if (value === 'default') return editor.chain().focus().unsetMark(mark).run()\n    if (!isTextPreset(property, value)) return false\n    return editor.chain().focus().setMark(mark, { value }).run()\n}"
         },
         {
           "name": "clearFormatting",
@@ -395,13 +409,151 @@
           "options": []
         },
         {
-          "label": "Insert or Edit Link",
-          "kind": "EditorButton",
-          "handler": "() => setLinkDialogOpen(true)",
-          "active": "editor.isActive('link')",
-          "disabled": null,
+          "label": "Text color",
+          "kind": "select",
+          "handler": "event => applyPreset(editor, 'mwTextColor', 'color', event.target.value)",
+          "active": null,
+          "disabled": "!formatting.canTextColor",
           "pressed": null,
           "mouseDown": null,
+          "className": "mw-tiptap-format-select",
+          "value": "formatting.textColor",
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": [
+            {
+              "value": "",
+              "label": "Text color / mixed",
+              "disabled": "true"
+            },
+            {
+              "value": "default",
+              "label": "Default",
+              "disabled": null
+            },
+            {
+              "value": "black",
+              "label": "Black",
+              "disabled": null
+            },
+            {
+              "value": "red",
+              "label": "Red",
+              "disabled": null
+            },
+            {
+              "value": "blue",
+              "label": "Blue",
+              "disabled": null
+            },
+            {
+              "value": "green",
+              "label": "Green",
+              "disabled": null
+            },
+            {
+              "value": "purple",
+              "label": "Purple",
+              "disabled": null
+            }
+          ]
+        },
+        {
+          "label": "Font size",
+          "kind": "select",
+          "handler": "event => applyPreset(editor, 'mwFontSize', 'font-size', event.target.value)",
+          "active": null,
+          "disabled": "!formatting.canFontSize",
+          "pressed": null,
+          "mouseDown": null,
+          "className": "mw-tiptap-format-select",
+          "value": "formatting.fontSize",
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": [
+            {
+              "value": "",
+              "label": "Font size / mixed",
+              "disabled": "true"
+            },
+            {
+              "value": "default",
+              "label": "Default",
+              "disabled": null
+            },
+            {
+              "value": "12px",
+              "label": "12 px",
+              "disabled": null
+            },
+            {
+              "value": "16px",
+              "label": "16 px",
+              "disabled": null
+            },
+            {
+              "value": "20px",
+              "label": "20 px",
+              "disabled": null
+            },
+            {
+              "value": "24px",
+              "label": "24 px",
+              "disabled": null
+            }
+          ]
+        },
+        {
+          "label": "Font family",
+          "kind": "select",
+          "handler": "event => applyPreset(editor, 'mwFontFamily', 'font-family', event.target.value)",
+          "active": null,
+          "disabled": "!formatting.canFontFamily",
+          "pressed": null,
+          "mouseDown": null,
+          "className": "mw-tiptap-format-select",
+          "value": "formatting.fontFamily",
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": [
+            {
+              "value": "",
+              "label": "Font family / mixed",
+              "disabled": "true"
+            },
+            {
+              "value": "default",
+              "label": "Default",
+              "disabled": null
+            },
+            {
+              "value": "sans-serif",
+              "label": "Sans serif",
+              "disabled": null
+            },
+            {
+              "value": "serif",
+              "label": "Serif",
+              "disabled": null
+            },
+            {
+              "value": "monospace",
+              "label": "Monospace",
+              "disabled": null
+            }
+          ]
+        },
+        {
+          "label": "Insert or Edit Link",
+          "kind": "EditorButton",
+          "handler": "() => { if (canEditLink(editor)) setLinkDialogOpen(true) }",
+          "active": "formatting.link",
+          "disabled": "!formatting.canLink",
+          "pressed": null,
+          "mouseDown": "event => event.preventDefault()",
           "className": null,
           "value": null,
           "conditions": [
@@ -412,11 +564,11 @@
         {
           "label": "Remove Link",
           "kind": "EditorButton",
-          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .extendMarkRange('link')\n                                .unsetLink()\n                                .run()",
+          "handler": "() => {\n                            if (editor.isEditable && editor.isActive('link') && editor.can().unsetLink()) {\n                                editor.chain().focus().unsetLink().run()\n                            }\n                        }",
           "active": null,
-          "disabled": "!editor.isActive('link')",
+          "disabled": "!formatting.canUnlink",
           "pressed": null,
-          "mouseDown": null,
+          "mouseDown": "event => event.preventDefault()",
           "className": null,
           "value": null,
           "conditions": [
@@ -946,27 +1098,35 @@
     },
     "components/dialogs/LinkDialog.tsx": {
       "chains": [
-        "editor\n                .chain()\n                .focus()\n                .extendMarkRange('link')\n                .setLink({\n                    href: normalizedUrl,\n                    target,\n                    rel,\n                })\n                .run()",
-        "editor\n                    .chain()\n                    .focus()\n                    .insertContent({\n                        type: 'text',\n\n                        text: text.trim(),\n\n                        marks: [\n                            {\n                                type: 'link',\n\n                                attrs: {\n                                    href:\n                                        normalizedUrl,\n\n                                    target,\n\n                                    rel,\n                                },\n                            },\n                        ],\n                    })\n                    .run()",
-        "editor\n                    .chain()\n                    .focus()\n                    .setLink({\n                        href: normalizedUrl,\n                        target,\n                        rel,\n                    })\n                    .run()",
-        "editor\n            .chain()\n            .focus()\n            .insertContent({\n                type: 'text',\n\n                text: linkText,\n\n                marks: [\n                    {\n                        type: 'link',\n\n                        attrs: {\n                            href: normalizedUrl,\n                            target,\n                            rel,\n                        },\n                    },\n                ],\n            })\n            .run()",
-        "editor\n            .chain()\n            .focus()\n            .extendMarkRange('link')\n            .unsetLink()\n            .run()"
+        "scratch.setTextSelection(range).setLink(attrs).run()",
+        "editor.chain().focus().setTextSelection(range).setLink(attrs).run()",
+        "editor.chain().focus().insertContentAt(range.from, content).run()",
+        "scratch.setTextSelection(range).unsetLink().run()",
+        "editor.chain().focus().setTextSelection(range).unsetLink().run()"
       ],
       "subscriptions": [],
       "helpers": [
         {
+          "name": "canEditLink",
+          "expression": "export function canEditLink(editor: Editor): boolean {\n    if (!editor.isEditable || editor.isDestroyed) return false\n    const selection = editor.state.selection\n    return selection instanceof TextSelection && selection.$from.sameParent(selection.$to)\n        && editor.can().setLink({ href: 'https://example.com/' })\n}"
+        },
+        {
+          "name": "captureLinkSelection",
+          "expression": "function captureLinkSelection(editor: Editor) {\n    if (!canEditLink(editor)) return null\n    const { doc, selection } = editor.state\n    const attrs = editor.getAttributes('link')\n    const active = editor.isActive('link')\n    const range = selection.empty && active ? getMarkRange(selection.$from, editor.schema.marks.link, attrs) : undefined\n    const from = range?.from ?? selection.from\n    const to = range?.to ?? selection.to\n    return { doc, from, to, active, text: doc.textBetween(from, to), href: typeof attrs.href === 'string' ? attrs.href : '', newTab: attrs.target === '_blank' || !attrs.href }\n}"
+        },
+        {
           "name": "handleInsert",
-          "expression": "() => {\n        if (!isSafeUrl(url)) {\n            setError(\n                'Please enter a valid link.'\n            )\n\n            return\n        }\n\n        const normalizedUrl =\n            normalizeUrl(url)\n\n        const target =\n            openInNewTab\n                ? '_blank'\n                : null\n\n        const rel =\n            openInNewTab\n                ? 'noopener noreferrer'\n                : null\n\n        const {\n            empty,\n        } = editor.state.selection\n\n        /*\n         * Existing link.\n         */\n\n        if (editor.isActive('link')) {\n            editor\n                .chain()\n                .focus()\n                .extendMarkRange('link')\n                .setLink({\n                    href: normalizedUrl,\n                    target,\n                    rel,\n                })\n                .run()\n\n            onClose()\n\n            return\n        }\n\n        /*\n         * Selected text.\n         */\n\n        if (!empty) {\n            if (\n                text.trim() &&\n                text !== originalText\n            ) {\n                editor\n                    .chain()\n                    .focus()\n                    .insertContent({\n                        type: 'text',\n\n                        text: text.trim(),\n\n                        marks: [\n                            {\n                                type: 'link',\n\n                                attrs: {\n                                    href:\n                                        normalizedUrl,\n\n                                    target,\n\n                                    rel,\n                                },\n                            },\n                        ],\n                    })\n                    .run()\n            } else {\n                editor\n                    .chain()\n                    .focus()\n                    .setLink({\n                        href: normalizedUrl,\n                        target,\n                        rel,\n                    })\n                    .run()\n            }\n\n            onClose()\n\n            return\n        }\n\n        /*\n         * No selection.\n         *\n         * Insert link text directly.\n         */\n\n        const linkText =\n            text.trim() ||\n            normalizedUrl\n\n        editor\n            .chain()\n            .focus()\n            .insertContent({\n                type: 'text',\n\n                text: linkText,\n\n                marks: [\n                    {\n                        type: 'link',\n\n                        attrs: {\n                            href: normalizedUrl,\n                            target,\n                            rel,\n                        },\n                    },\n                ],\n            })\n            .run()\n\n        onClose()\n    }"
+          "expression": "() => {\n        const href = normalizeLinkUrl(url, true)\n        if (!href) { setError('Enter an HTTP(S) URL, domain, root-relative path or fragment.'); return }\n        if (!snapshot || editor.isDestroyed || !editor.isEditable || editor.state.doc !== snapshot.doc) {\n            setError('The document changed. Close and reopen the link dialog.'); return\n        }\n        const attrs = { href, target: openInNewTab ? '_blank' : null, rel: openInNewTab ? 'noopener noreferrer' : null }\n        const range = { from: snapshot.from, to: snapshot.to }\n        let applied: boolean\n        if (range.from !== range.to) {\n            const scratch = new CommandManager({ editor }).createChain(editor.state.tr)\n            if (!scratch.setTextSelection(range).setLink(attrs).run()) { setError('Link is unavailable for this selection.'); return }\n            applied = editor.chain().focus().setTextSelection(range).setLink(attrs).run()\n        } else {\n            const content = { type: 'text', text: text.trim() || href, marks: [{ type: 'link', attrs }] }\n            if (!editor.can().insertContentAt(range.from, content)) { setError('Link cannot be inserted here.'); return }\n            applied = editor.chain().focus().insertContentAt(range.from, content).run()\n        }\n        if (!applied) { setError('Link command was not applied.'); return }\n        onClose()\n    }"
         },
         {
           "name": "handleRemove",
-          "expression": "() => {\n        editor\n            .chain()\n            .focus()\n            .extendMarkRange('link')\n            .unsetLink()\n            .run()\n\n        onClose()\n    }"
+          "expression": "() => {\n        if (!snapshot || editor.isDestroyed || !editor.isEditable || editor.state.doc !== snapshot.doc) {\n            setError('The document changed. Close and reopen the link dialog.'); return\n        }\n        const range = { from: snapshot.from, to: snapshot.to }\n        const scratch = new CommandManager({ editor }).createChain(editor.state.tr)\n        if (!scratch.setTextSelection(range).unsetLink().run()) { setError('Link cannot be removed.'); return }\n        if (editor.chain().focus().setTextSelection(range).unsetLink().run()) onClose()\n        else setError('Link command was not applied.')\n    }"
         }
       ],
       "directCommands": [],
       "bindings": [],
       "effects": [
-        "useEffect(() => {\n        if (!open) {\n            return\n        }\n\n        const {\n            from,\n            to,\n        } = editor.state.selection\n\n        const selectedText =\n            editor.state.doc.textBetween(\n                from,\n                to,\n                ' '\n            )\n\n        const linkAttributes =\n            editor.getAttributes('link')\n\n        setText(selectedText)\n        setOriginalText(selectedText)\n\n        setUrl(\n            linkAttributes.href ?? ''\n        )\n\n        setOpenInNewTab(\n            linkAttributes.target ===\n                '_blank' ||\n                !linkAttributes.href\n        )\n\n        setError('')\n    }, [open, editor])"
+        "useEffect(() => {\n        if (!open) { setSnapshot(null); return }\n        const captured = captureLinkSelection(editor)\n        setSnapshot(captured)\n        setText(captured?.text ?? '')\n        setUrl(captured?.href ?? '')\n        setOpenInNewTab(captured?.newTab ?? true)\n        setError(captured ? '' : 'Select editable text before opening the link dialog.')\n    }, [open, editor])"
       ]
     },
     "components/dialogs/ImageDialog.tsx": {
@@ -1101,8 +1261,12 @@
       "subscriptions": [],
       "helpers": [
         {
+          "name": "presetMark",
+          "expression": "function presetMark(name: string, property: TextPresetProperty) {\n    return Mark.create({\n        name,\n        addAttributes() {\n            return { value: { default: null, rendered: false } }\n        },\n        parseHTML() {\n            return [{ tag: 'span[style]', consuming: false, getAttrs: (node: HTMLElement) => {\n                const value = (node as HTMLElement).style.getPropertyValue(property).trim()\n                return isTextPreset(property, value) ? { value } : false\n            } }]\n        },\n        renderHTML({ mark }) {\n            const value = mark.attrs.value\n            return typeof value === 'string' && isTextPreset(property, value)\n                ? ['span', { style: `${property}: ${value}` }, 0]\n                : ['span', {}, 0]\n        },\n    })\n}"
+        },
+        {
           "name": "createEditorExtensions",
-          "expression": "export function createEditorExtensions({\n    imageUploadUrl =\n        '/tiptap-editor/media',\n\n    onImageUpload,\n}: EditorExtensionOptions = {}) {\n    return [\n        StarterKit.configure({\n            heading: {\n                levels: [\n                    1,\n                    2,\n                    3,\n                ],\n            },\n\n            link: {\n                openOnClick:\n                    false,\n\n                autolink:\n                    true,\n\n                linkOnPaste:\n                    true,\n\n                defaultProtocol:\n                    'https',\n            },\n        }),\n\n        TextAlign.configure({\n            types: [\n                'heading',\n                'paragraph',\n            ],\n\n            alignments: [\n                'left',\n                'center',\n                'right',\n                'justify',\n            ],\n        }),\n\n        // Both marks are installed together; one baseline position per character.\n        Subscript.extend({ excludes: 'superscript' }),\n\n        Superscript.extend({ excludes: 'subscript' }),\n\n        ImageFigure.configure({\n            imageUploadUrl,\n\n            onImageUpload,\n        }),\n\n        VideoEmbed,\n\n        NewsBlock,\n\n        CustomTable.configure({\n            resizable:\n                true,\n\n            lastColumnResizable:\n                true,\n\n            allowTableNodeSelection:\n                true,\n        }),\n\n        TableRow,\n\n        CustomTableHeader,\n\n        CustomTableCell,\n    ]\n}"
+          "expression": "export function createEditorExtensions({\n    imageUploadUrl =\n        '/tiptap-editor/media',\n\n    onImageUpload,\n}: EditorExtensionOptions = {}) {\n    return [\n        StarterKit.configure({\n            heading: {\n                levels: [\n                    1,\n                    2,\n                    3,\n                ],\n            },\n\n            link: {\n                openOnClick:\n                    false,\n\n                autolink:\n                    true,\n\n                linkOnPaste:\n                    true,\n\n                defaultProtocol:\n                    'https',\n                // Linkify supplies bare hosts to its validation callback.\n                isAllowedUri: (url, context) => context.defaultValidate(url) && Boolean(normalizeLinkUrl(url, true)),\n                shouldAutoLink: url => Boolean(normalizeLinkUrl(url, true)) &&\n                    (/^https?:\\/\\//i.test(url) || (/^[a-z0-9-]+(?:\\.[a-z0-9-]+)+(?:[/?#]|$)/i.test(url) && !/^\\d{1,3}(?:\\.\\d{1,3}){3}(?:[/?#]|$)/.test(url))),\n            },\n        }),\n\n        presetMark('mwTextColor', 'color'),\n        presetMark('mwFontSize', 'font-size'),\n        presetMark('mwFontFamily', 'font-family'),\n\n        TextAlign.configure({\n            types: [\n                'heading',\n                'paragraph',\n            ],\n\n            alignments: [\n                'left',\n                'center',\n                'right',\n                'justify',\n            ],\n        }),\n\n        // Both marks are installed together; one baseline position per character.\n        Subscript.extend({ excludes: 'superscript' }),\n\n        Superscript.extend({ excludes: 'subscript' }),\n\n        ImageFigure.configure({\n            imageUploadUrl,\n\n            onImageUpload,\n        }),\n\n        VideoEmbed,\n\n        NewsBlock,\n\n        CustomTable.configure({\n            resizable:\n                true,\n\n            lastColumnResizable:\n                true,\n\n            allowTableNodeSelection:\n                true,\n        }),\n\n        TableRow,\n\n        CustomTableHeader,\n\n        CustomTableCell,\n    ]\n}"
         }
       ],
       "directCommands": [],
@@ -1120,6 +1284,18 @@
         {
           "name": "ALLOWED_ATTR",
           "expression": "[\n    'href',\n    'target',\n    'rel',\n    'src',\n    'alt',\n    'title',\n    'class',\n    'style',\n    'loading',\n    'decoding',\n    'allow',\n    'allowfullscreen',\n    'referrerpolicy',\n    'start',\n    'rowspan',\n    'colspan',\n    'colwidth',\n    ...SAFE_DATA_ATTRIBUTES,\n] as const"
+        },
+        {
+          "name": "normalizeLinkUrl",
+          "expression": "export function normalizeLinkUrl(value: string, allowBareHost = false): string {\n    let url = value.replace(/^ +| +$/g, '')\n    if (!url || url.length > 4096 || /[\\p{C}\\p{Z}\\\\]/u.test(url)) return ''\n    if (url.startsWith('#') || (url.startsWith('/') && !url.startsWith('//'))) return url\n    if (allowBareHost && /^[a-z0-9-]+(?:\\.[a-z0-9-]+)+(?:[/?#]|$)/i.test(url)) url = `https://${url}`\n    if (!/^https?:\\/\\//i.test(url) || !/^https?:\\/\\/[^/?#]+/i.test(url) || /^https?:\\/\\/[^/?#]*@/i.test(url)) return ''\n    try {\n        const parsed = new URL(url)\n        if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname || parsed.username || parsed.password) return ''\n        return parsed.toString()\n    } catch {\n        return ''\n    }\n}"
+        },
+        {
+          "name": "TEXT_PRESETS",
+          "expression": "{\n    color: ['black', 'red', 'blue', 'green', 'purple'],\n    'font-size': ['12px', '16px', '20px', '24px'],\n    'font-family': ['sans-serif', 'serif', 'monospace'],\n} as const"
+        },
+        {
+          "name": "isTextPreset",
+          "expression": "export function isTextPreset(property: TextPresetProperty, value: string): boolean {\n    return (TEXT_PRESETS[property] as readonly string[]).includes(value)\n}"
         }
       ],
       "directCommands": [],
