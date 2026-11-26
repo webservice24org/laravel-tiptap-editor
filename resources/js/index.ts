@@ -41,3 +41,8 @@ export type {
     NewsSearchHandler,
     NewsSearchResult,
 } from './types/newsBlock'
+
+// Public custom-node types also expose their Tiptap command augmentations.
+export type { ImageAlignment, ImageFigureOptions } from './extensions/ImageFigure'
+export type { InsertNewsBlockOptions } from './extensions/NewsBlock'
+export type { VideoAlignment, VideoProvider } from './extensions/VideoEmbed'

@@ -3,10 +3,11 @@
     "compilerOptions": {
         "noEmit": false,
         "declaration": true,
-        "declarationMap": true,
+        "declarationMap": false,
         "emitDeclarationOnly": true,
         "outDir": "dist",
-        "rootDir": "resources/js"
+        "rootDir": "resources/js",
+        "noEmitOnError": true
     },
     "include": [
         "resources/js/**/*.ts",
@@ -14,6 +15,7 @@
         "resources/js/**/*.d.ts"
     ],
     "exclude": [
-        "vite.config.ts"
+        "vite.config.ts",
+        "resources/js/Index.tsx"
     ]
 }

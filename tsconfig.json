@@ -18,11 +18,16 @@
         "resolveJsonModule": true,
         "isolatedModules": true,
         "noEmit": true,
-        "jsx": "react-jsx"
+        "jsx": "react-jsx",
+        "noEmitOnError": true,
+        "noUncheckedSideEffectImports": true
     },
     "include": [
         "resources/js/**/*.ts",
         "resources/js/**/*.tsx",
         "vite.config.ts"
+    ],
+    "exclude": [
+        "resources/js/Index.tsx"
     ]
 }
