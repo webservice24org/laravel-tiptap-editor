@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
-      - uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # 2.36.0
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.5'
           extensions: dom, fileinfo, libxml, mbstring, xml, xmlwriter
@@ -33,6 +33,8 @@ jobs:
         id: matrix
         shell: bash
         run: |
+          python3 -B tools/test-ci-evidence.py
+          python3 -B tools/ci-verify-evidence.py preflight composer.json
           php tools/compatibility-matrix.php --check
           latest="$(php tools/compatibility-matrix.php --github)"
           lowest="$(php tools/compatibility-matrix.php --github-lowest)"
@@ -50,7 +52,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
-      - uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # 2.36.0
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php }}
           extensions: dom, fileinfo, libxml, mbstring, xml, xmlwriter, curl, openssl, pdo_sqlite, sqlite3, tokenizer, ctype, filter, iconv
@@ -83,7 +85,7 @@ jobs:
         with:
           name: ${{ matrix.id }}-attempt-${{ github.run_attempt }}
           path: ${{ runner.temp }}/editor-compatibility/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
 
   lowest:
@@ -98,7 +100,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
-      - uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # 2.36.0
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php }}
           extensions: dom, fileinfo, libxml, mbstring, xml, xmlwriter, curl, openssl, pdo_sqlite, sqlite3, tokenizer, ctype, filter, iconv
@@ -131,22 +133,24 @@ jobs:
         with:
           name: ${{ matrix.id }}-attempt-${{ github.run_attempt }}
           path: ${{ runner.temp }}/editor-compatibility/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
 
   required-gate:
     name: Required compatibility gate
     if: always()
-    needs: [discover, latest]
+    needs: [discover, latest, lowest]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Verify all required jobs passed
+      - name: Verify all compatibility jobs and probes passed
         shell: bash
         env:
           DISCOVERY_RESULT: ${{ needs.discover.result }}
           LATEST_RESULT: ${{ needs.latest.result }}
+          LOWEST_RESULT: ${{ needs.lowest.result }}
         run: |
           test "$DISCOVERY_RESULT" = success
           test "$LATEST_RESULT" = success
-          echo 'All seven required compatibility lanes passed.'
+          test "$LOWEST_RESULT" = success
+          echo 'All seven required lanes and two lower-bound probes passed evidence verification.'
