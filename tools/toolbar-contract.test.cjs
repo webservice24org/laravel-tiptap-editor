@@ -16,11 +16,11 @@ const dropdown='components/toolbar/FormatDropdown.tsx';
 const table='components/toolbar/TableContextualToolbar.tsx';
 const mutation=fn=>{const clone=structuredClone(actual);fn(clone);return clone;};
 test('accepted source inventory matches review record',()=>verify(actual,expected));
-test('inventory counts all three toolbar surfaces',()=>assert.deepEqual(totals(actual),{controls:50,options:4,command_chains:47,source_files:15}));
+test('inventory counts all three toolbar surfaces',()=>assert.deepEqual(totals(actual),{controls:50,options:5,command_chains:45,source_files:15}));
 test('extract named button and exact handler',()=>{const [c]=controls('const a=<EditorButton tooltip="Bold" onClick={()=>editor.chain().focus().toggleBold().run()} />');assert.equal(c.label,'Bold');assert.match(c.handler,/toggleBold/);});
 test('capture active and disabled expressions',()=>{const [c]=controls('const a=<EditorButton tooltip="Undo" active={false} disabled={!editor.can().undo()} onClick={undo}/>');assert.equal(c.active,'false');assert.equal(c.disabled,'!editor.can().undo()');});
 test('capture nested rendering conditions',()=>{const [c]=controls('const a=mode === "visual" && (!inside && <button aria-label="Align" onClick={align}/>);');assert.deepEqual(c.conditions,['mode === "visual"','!inside']);});
-test('capture dropdown options and selected value',()=>{const [c]=controls('const a=<select aria-label="Format" value={value} onChange={change}><option value="p">Paragraph</option><option value="h1">Heading 1</option></select>');assert.equal(c.value,'value');assert.deepEqual(c.options,[{value:'p',label:'Paragraph'},{value:'h1',label:'Heading 1'}]);});
+test('capture dropdown options and selected value',()=>{const [c]=controls('const a=<select aria-label="Format" value={value} onChange={change}><option value="p">Paragraph</option><option value="h1">Heading 1</option></select>');assert.equal(c.value,'value');assert.deepEqual(c.options,[{value:'p',label:'Paragraph',disabled:null},{value:'h1',label:'Heading 1',disabled:null}]);});
 test('capture color input label from enclosing control',()=>assert.equal(controls('const a=<label title="Cell color"><input type="color" onChange={change}/></label>')[0].label,'Cell color'));
 test('capture native button text',()=>assert.equal(controls('const a=<button onClick={insert}><span>Insert</span></button>')[0].label,'Insert'));
 test('reject duplicate control labels',()=>assert.throws(()=>controls('const a=<><button aria-label="X" onClick={a}/><button aria-label="X" onClick={b}/></>'),/Duplicate toolbar control/));
@@ -109,4 +109,30 @@ test('denied script capability never starts live chain',()=>{
 });
 test('noneditable and destroyed editors do not probe or execute script actions',()=>{
     for(const opts of [{editable:false},{destroyed:true}]){const f=scriptFixture(opts);assert.equal(f.can('subscript'),false);assert.equal(f.apply('superscript'),false);assert.deepEqual(f.calls,[]);}
+});
+
+// F3C block formatting source contracts; actual runtime is exercised in Chromium.
+test('format dropdown subscribes to selection and availability',()=>{
+    const d=actual.files[dropdown];assert.ok(d.subscriptions.some(s=>s.includes('getCurrentFormat(currentEditor)')&&s.includes("canSetFormat(currentEditor, 'h3')")));
+    assert.equal(d.controls[0].value,'format.value');assert.match(d.controls[0].disabled,/disabled/);
+});
+test('other or mixed block placeholder is not a selectable command',()=>{
+    const d=actual.files[dropdown];assert.deepEqual(d.controls[0].options[0],{value:'other',label:'Other / mixed',disabled:'true'});
+    assert.ok(d.helpers.some(h=>h.name==='getCurrentFormat'&&h.expression.includes("return 'other'")));
+    assert.ok(d.helpers.some(h=>h.name==='handleChange'&&h.expression.includes('if (disabled) return')));
+});
+test('four supported block options have individual capability checks',()=>{
+    const d=actual.files[dropdown];for(const o of d.controls[0].options.slice(1))assert.equal(o.disabled,'!format.'+o.value);
+    assert.ok(d.helpers.some(h=>h.name==='canSetFormat'&&h.expression.includes('editor.can().setParagraph()')&&h.expression.includes('editor.can().setHeading({ level })')));
+});
+test('block action rechecks availability and executes focused chain',()=>{
+    const h=actual.files[dropdown].helpers.find(h=>h.name==='applyBlockFormat').expression;
+    assert.match(h,/if \(!canSetFormat\(editor, value\)\) return false/);assert.match(h,/focus\(\)\.setParagraph\(\)\.run\(\)/);assert.match(h,/focus\(\)\.setHeading/);
+});
+test('format dropdown is disabled in source mode',()=>assert.ok(actual.files[main].bindings.some(b=>b.kind==='FormatDropdown'&&b.expression.includes("disabled={mode !== 'visual'}"))));
+for(const [label,cap,cmd] of [['Blockquote','canBlockquote','toggleBlockquote'],['Horizontal Rule','canHorizontalRule','setHorizontalRule']])test(label+' uses reactive availability and preserves mouse selection',()=>{
+    const source=actual.files[main];const c=source.controls.find(c=>c.label===label);assert.equal(c.disabled,'!formatting.'+cap);assert.match(c.mouseDown,/preventDefault/);assert.ok(source.subscriptions.some(s=>s.includes('currentEditor.can().'+cmd+'()')));if(label==='Blockquote')assert.equal(c.active,'formatting.blockquote');
+});
+test('client sanitizer retains code and pre in the tag allowlist',()=>{
+    const h=actual.files['utils/sanitizeHtml.ts'].helpers.find(h=>h.name==='ALLOWED_TAGS').expression;for(const tag of ['code','pre','blockquote','hr','h1','h2','h3'])assert.ok(h.includes("'"+tag+"'"));
 });

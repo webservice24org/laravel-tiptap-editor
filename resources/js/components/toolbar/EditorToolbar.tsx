@@ -157,6 +157,9 @@ export default function EditorToolbar({
             canSubscript: canToggleScript(currentEditor, 'subscript'),
             superscript: currentEditor.isActive('superscript'),
             canSuperscript: canToggleScript(currentEditor, 'superscript'),
+            blockquote: currentEditor.isActive('blockquote'),
+            canBlockquote: currentEditor.isEditable && currentEditor.can().toggleBlockquote(),
+            canHorizontalRule: currentEditor.isEditable && currentEditor.can().setHorizontalRule(),
             canClear: currentEditor.isEditable && currentEditor.can().chain().clearNodes().unsetAllMarks().run(),
         }),
     })
@@ -169,7 +172,7 @@ export default function EditorToolbar({
                 role="toolbar"
                 aria-label="Editor insert and view controls"
             >
-                <FormatDropdown editor={editor} />
+                <FormatDropdown editor={editor} disabled={mode !== 'visual'} />
 
                 <button
                     type="button"
@@ -503,7 +506,9 @@ export default function EditorToolbar({
 
                 <ToolbarGroup>
                     <EditorButton
-                        active={editor.isActive('blockquote')}
+                        active={formatting.blockquote}
+                        disabled={!formatting.canBlockquote}
+                        onMouseDown={event => event.preventDefault()}
                         tooltip="Blockquote"
                         onClick={() =>
                             editor
@@ -518,6 +523,8 @@ export default function EditorToolbar({
 
                     <EditorButton
                         tooltip="Horizontal Rule"
+                        disabled={!formatting.canHorizontalRule}
+                        onMouseDown={event => event.preventDefault()}
                         onClick={() =>
                             editor
                                 .chain()

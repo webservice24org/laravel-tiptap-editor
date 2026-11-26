@@ -48,6 +48,8 @@ const ALLOWED_TAGS = [
     'ol',
     'li',
     'blockquote',
+    'code',
+    'pre',
     'hr',
     'a',
     'span',

@@ -12,7 +12,7 @@ class EditorHtmlSanitizer
 {
     private const TAGS = [
         'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'sub', 'sup', 'h1', 'h2', 'h3',
-        'ul', 'ol', 'li', 'blockquote', 'hr', 'a', 'span', 'div', 'figure', 'figcaption',
+        'ul', 'ol', 'li', 'blockquote', 'hr', 'code', 'pre', 'a', 'span', 'div', 'figure', 'figcaption',
         'img', 'iframe', 'article', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'colgroup', 'col',
     ];
     private const VOID_TAGS = ['br', 'hr', 'img', 'col'];

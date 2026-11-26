@@ -39,7 +39,7 @@ function main(){
         const filename=packInventory(pack,dist), archive=path.join(work,'editor.tgz');fs.renameSync(path.join(work,filename),archive);
         const archiveBytes=read(archive);assert.equal(pack[0].integrity,'sha512-'+require('node:crypto').createHash('sha512').update(archiveBytes).digest('base64'));
         json(path.join(work,'package.json'),p.manifest);json(path.join(report,'consumer-manifest.json'),p.manifest);
-        for(const name of ['index.html','main.tsx','browser.mjs','formatting.mjs'])fs.copyFileSync(path.join(root,'tests/Consumer',name),path.join(work,name));
+        for(const name of ['index.html','main.tsx','browser.mjs','formatting.mjs','blocks.mjs'])fs.copyFileSync(path.join(root,'tests/Consumer',name),path.join(work,name));
         fs.copyFileSync(path.join(root,'tests/TypeScript/public-api.tsx'),path.join(work,'public-api.tsx'));
         const config={compilerOptions:{target:'ES2022',lib:['ES2022','DOM','DOM.Iterable'],module:'ESNext',moduleResolution:'Bundler',jsx:'react-jsx',strict:true,noEmit:true,noEmitOnError:true,skipLibCheck:false,types:['vite/client'],esModuleInterop:true,forceConsistentCasingInFileNames:true,noUncheckedSideEffectImports:true},files:['main.tsx','public-api.tsx'],include:['node_modules/@microweb/laravel-tiptap-editor/dist/**/*.d.ts']};
         json(path.join(work,'tsconfig.json'),config);json(path.join(work,'tsconfig.nodenext.json'),{extends:'./tsconfig.json',compilerOptions:{module:'NodeNext',moduleResolution:'NodeNext',skipLibCheck:true}});
@@ -62,6 +62,8 @@ function main(){
         const marks=['Bold','Italic','Underline','Strike','Subscript','Superscript'];
         const expectedChecks=[...marks.flatMap(name=>[`${name}: selection apply/remove`,`${name}: stored mark typing`,`${name}: selection-only state`]),'combined marks and clear formatting','mixed selection bold','subscript/superscript exclusion','safe inline HTML round trip'];
         assert.deepEqual(browser.formatting.checks,expectedChecks,'Incomplete formatting browser evidence');
+        assert.equal(browser.blocks?.status,'passed','Missing block browser evidence');
+        assert.deepEqual(browser.blocks.checks,['heading 1 round trip','heading 2 round trip','heading 3 round trip','selection-only block state','mixed block selection','blockquote toggle','horizontal rule','clear block formatting','safe code markup round trip','source mode format guard'],'Incomplete block browser evidence');
         assert.equal(sha(read(lockPath)),lockHash,'Consumer lock changed');
         for(const [n,h] of Object.entries(before))assert.equal(sha(read(path.join(root,n))),h,'Editor baseline modified: '+n);
         json(path.join(report,'consumer-summary.json'),{status:'passed',lane:major,...runtime,platform:process.platform,commit:process.env.GITHUB_SHA||null,editor:before,archive_sha256:sha(archiveBytes),consumer_lock_sha256:lockHash,...verified,audits:'clean',browser});

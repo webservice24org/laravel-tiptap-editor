@@ -31,7 +31,7 @@ function inspectControls(file){
         assert.ok(label,`Unlabelled toolbar control in ${file.fileName}`);
         assert.ok(!seen.has(label),`Duplicate toolbar control: ${label}`);seen.add(label);
         const handler=get(kind==='select'||kind==='input'?'onChange':'onClick');assert.ok(handler,`Missing handler: ${label}`);
-        const options=kind==='select'?childrenOf(n,'option').map(o=>({value:attr(o,'value',file),label:textContent(o)})):[];
+        const options=kind==='select'?childrenOf(n,'option').map(o=>({value:attr(o,'value',file),label:textContent(o),disabled:attr(o,'disabled',file)})):[];
         const open=ts.isJsxElement(n)?n.openingElement:n;
         assert.ok(!open.attributes.properties.some(ts.isJsxSpreadAttribute),`Unreviewed spread: ${label}`);
         items.push({label,kind,handler,active:get('active'),disabled:get('disabled'),pressed:get('aria-pressed'),mouseDown:get('onMouseDown'),className:get('className'),value:get('value'),conditions:conditions(n,file),options});
@@ -50,7 +50,7 @@ function inspectSource(file){
         if(['useEditorState','useEditor'].includes(name))subscriptions.push(printed(n,file));
         if(name&&ts.isPropertyAccessExpression(n.expression)&&ts.isPropertyAccessExpression(n.expression.expression)&&n.expression.expression.name.text==='commands')directCommands.push(printed(n,file));
         if(ts.isVariableDeclaration(n)&&ts.isIdentifier(n.name)&&['clearFormatting','handleChange','getCurrentFormat','updateCurrentTableCell','handleInsert','handleRemove','switchMode'].includes(n.name.text)&&n.initializer)helpers.push({name:n.name.text,expression:printed(n.initializer,file)});
-        if(ts.isFunctionDeclaration(n)&&n.name&&['createEditorExtensions','scriptChain','canToggleScript','applyScript'].includes(n.name.text))helpers.push({name:n.name.text,expression:printed(n,file)});
+        if(ts.isFunctionDeclaration(n)&&n.name&&['createEditorExtensions','scriptChain','canToggleScript','applyScript','getCurrentFormat','canSetFormat','applyBlockFormat'].includes(n.name.text))helpers.push({name:n.name.text,expression:printed(n,file)});
         if(ts.isVariableDeclaration(n)&&ts.isIdentifier(n.name)&&['ALLOWED_TAGS','ALLOWED_ATTR'].includes(n.name.text)&&n.initializer)helpers.push({name:n.name.text,expression:printed(n.initializer,file)});
     });return {chains,subscriptions,helpers,directCommands,bindings,effects};
 }
