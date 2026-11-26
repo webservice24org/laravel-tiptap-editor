@@ -14,10 +14,25 @@ async function selectBlocks(editor, first, last=first, full=false) {
         while((n=walker.nextNode()))end=n
         if(!start||!end)throw Error('Expected nonempty text blocks')
         const range=document.createRange();range.setStart(start,full?0:Math.min(1,start.length));range.setEnd(full?end:start,full?end.length:Math.min(1,start.length))
-        const expected=range.toString(),sel=getSelection();sel.removeAllRanges();sel.addRange(range);await frame();await frame()
-        return {focused:document.activeElement===root,text:sel.toString(),expected,collapsed:sel.isCollapsed,anchor:a.contains(sel.anchorNode),focus:(full?b:a).contains(sel.focusNode)}
+        // Range text is DOM text; Selection.toString() is rendered text and
+        // can add line breaks between blocks. Compare like with like, without
+        // removing whitespace, and verify exact logical offsets in both blocks.
+        const endpointBlock=full?b:a
+        function offsetIn(block,node,offset){
+            if(!node||!block.contains(node))return null
+            const prefix=document.createRange();prefix.selectNodeContents(block);prefix.setEnd(node,offset)
+            return prefix.toString().length
+        }
+        const expected={text:range.toString(),start:offsetIn(a,range.startContainer,range.startOffset),end:offsetIn(endpointBlock,range.endContainer,range.endOffset)}
+        const sel=getSelection();sel.removeAllRanges();sel.addRange(range);await frame();await frame()
+        const actual=sel.rangeCount===1?sel.getRangeAt(0):null
+        return {focused:document.activeElement===root,rangeCount:sel.rangeCount,collapsed:sel.isCollapsed,
+            anchor:a.contains(sel.anchorNode),focus:endpointBlock.contains(sel.focusNode),
+            actual:actual?{text:actual.toString(),start:offsetIn(a,actual.startContainer,actual.startOffset),end:offsetIn(endpointBlock,actual.endContainer,actual.endOffset)}:null,
+            expected,renderedText:sel.toString()}
     },{first,last,full})
-    assert.deepEqual(result,{focused:true,text:result.expected,expected:result.expected,collapsed:!full,anchor:true,focus:true},'Native block selection mismatch')
+    const {expected,renderedText,...actual}=result
+    assert.deepEqual(actual,{focused:true,rangeCount:1,collapsed:!full,anchor:true,focus:true,actual:expected},'Native block selection mismatch (rendered selection: '+JSON.stringify(renderedText)+')')
 }
 
 // StarterKit may append one empty paragraph after a non-paragraph block.
