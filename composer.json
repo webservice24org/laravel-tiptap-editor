@@ -25,10 +25,29 @@
     },
     "require": {
         "php": "^8.2",
-        "illuminate/console": "^12.0",
-        "illuminate/filesystem": "^12.0",
-        "illuminate/http": "^12.0",
-        "illuminate/routing": "^12.0",
-        "illuminate/support": "^12.0"
+        "ext-dom": "*",
+        "ext-fileinfo": "*",
+        "ext-libxml": "*",
+        "laravel/framework": "^12.0 || ^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0 || ^11.0",
+        "phpunit/phpunit": "^11.5.50 || ^12.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MicroWeb\\TiptapEditor\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "@php vendor/bin/phpunit",
+        "test:12": [
+            "@php tools/assert-test-stack.php 12",
+            "@test"
+        ],
+        "test:13": [
+            "@php tools/assert-test-stack.php 13",
+            "@test"
+        ]
     }
 }

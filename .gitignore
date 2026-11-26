@@ -18,3 +18,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# PHPUnit local output
+/.phpunit.cache/
+/.phpunit.result.cache
