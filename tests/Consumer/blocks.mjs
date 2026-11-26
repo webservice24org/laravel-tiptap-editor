@@ -70,9 +70,22 @@ export async function runBlocks(page,editor) {
         await select('paragraph');await documentShape([['p','Block target']],true);await content('p strong,b','Block target');await content('h1,h2,h3','',0)
     })
     await check('selection-only block state',async()=>{
-        await reset('<p>Plain</p><h1>One</h1><h2>Two</h2><h3>Three</h3>','PlainOneTwoThree')
-        for(const [tag,value] of [['p','paragraph'],['h1','h1'],['h2','h2'],['h3','h3'],['p','paragraph']]){await selectBlocks(editor,tag);await state(value)}
-        assert.equal(await page.locator('#changes').textContent(),'0')
+        // Start with the trailing paragraph required by StarterKit. Otherwise
+        // the first focus/selection transaction can append it and legitimately
+        // emit onChange even though the user did not edit any text.
+        const source='<p>Plain</p><h1>One</h1><h2>Two</h2><h3>Three</h3><p></p>'
+        await reset(source,'PlainOneTwoThree')
+        const initialHtml=await editor.innerHTML()
+        assert.deepEqual(await editor.locator(':scope > *').evaluateAll(nodes=>nodes.map(n=>[n.tagName,n.textContent])),[['P','Plain'],['H1','One'],['H2','Two'],['H3','Three'],['P','']])
+        async function unchanged(){
+            assert.equal(await page.locator('#changes').textContent(),'0','Selection-only navigation emitted onChange')
+            assert.equal(await page.locator('#html').textContent(),source,'Selection-only navigation changed saved HTML')
+            assert.equal(await editor.innerHTML(),initialHtml,'Selection-only navigation changed editor HTML')
+        }
+        await unchanged()
+        for(const [tag,value] of [['p','paragraph'],['h1','h1'],['h2','h2'],['h3','h3'],['p','paragraph']]){
+            await selectBlocks(editor,tag);await state(value);await unchanged()
+        }
     })
     await check('mixed block selection',async()=>{
         await reset('<p>First</p><h2>Second</h2>','FirstSecond');await selectBlocks(editor,'p','h2',true);await state('other')
