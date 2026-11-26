@@ -1,0 +1,74 @@
+name: Editor Node build compatibility
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    name: Build / ${{ matrix.os }} / Node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+        node: ['22', '24', '26']
+    defaults:
+      run:
+        shell: bash
+    env:
+      EXPECTED_NODE_MAJOR: ${{ matrix.node }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}.x
+          check-latest: true
+          package-manager-cache: false
+          architecture: x64
+      - name: Runtime and validator tests
+        run: |
+          mkdir -p node-build-evidence
+          npm run check:runtime -- --expected-major "$EXPECTED_NODE_MAJOR" 2>&1 | tee node-build-evidence/runtime.log
+          npm run test:runtime 2>&1 | tee node-build-evidence/runtime-tests.log
+      - name: Strict frozen dependency install
+        run: |
+          npm ci --engine-strict --strict-peer-deps --force=false --legacy-peer-deps=false --include=dev --include=optional --ignore-scripts=false 2>&1 | tee node-build-evidence/install.log
+          npm ls --all --json > node-build-evidence/installed-tree.json
+          git diff --exit-code HEAD -- package.json package-lock.json
+      - name: Security audits
+        run: |
+          npm audit --json --audit-level=low > node-build-evidence/audit-all.json
+          npm audit --omit=dev --json --audit-level=low > node-build-evidence/audit-runtime.json
+      - name: Typecheck and production build smoke test
+        run: |
+          npm run typecheck 2>&1 | tee node-build-evidence/typecheck.log
+          npm run build 2>&1 | tee node-build-evidence/build.log
+          git diff --exit-code HEAD -- package.json package-lock.json
+          node tools/node-build-evidence.cjs node-build-evidence "$(npm --version)" "$EXPECTED_NODE_MAJOR"
+      - name: Upload build evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: node-${{ matrix.node }}-${{ matrix.os }}-attempt-${{ github.run_attempt }}
+          path: node-build-evidence/
+          if-no-files-found: error
+          retention-days: 14
+  required-gate:
+    name: Required Node build compatibility gate
+    if: always()
+    needs: [build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - shell: bash
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: |
+          test "$BUILD_RESULT" = success
+          echo 'All six Node build compatibility lanes passed.'
