@@ -50,6 +50,8 @@ jobs:
           npm run test:types 2>&1 | tee node-build-evidence/declaration-tests.log
           npm run test:bundle 2>&1 | tee node-build-evidence/bundle-tests.log
           npm run test:archive 2>&1 | tee node-build-evidence/archive-tests.log
+          npm run test:toolbar 2>&1 | tee node-build-evidence/toolbar-tests.log
+          node tools/toolbar-contract.cjs node-build-evidence/toolbar-summary.json
           npm run typecheck 2>&1 | tee node-build-evidence/typecheck.log
           npm run build 2>&1 | tee node-build-evidence/build.log
           git diff --exit-code HEAD -- package.json package-lock.json

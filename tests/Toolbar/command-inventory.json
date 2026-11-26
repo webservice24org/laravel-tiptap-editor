@@ -1,0 +1,1005 @@
+{
+  "schema_version": 1,
+  "files": {
+    "components/toolbar/EditorToolbar.tsx": {
+      "chains": [
+        "editor\n            .chain()\n            .focus()\n            .clearNodes()\n            .unsetAllMarks()\n            .run()",
+        "editor\n                                .chain()\n                                .focus()\n                                .toggleBold()\n                                .run()",
+        "editor\n                                .chain()\n                                .focus()\n                                .toggleItalic()\n                                .run()",
+        "editor\n                                .chain()\n                                .focus()\n                                .toggleUnderline()\n                                .run()",
+        "editor\n                                .chain()\n                                .focus()\n                                .toggleStrike()\n                                .run()",
+        "editor\n                                .chain()\n                                .focus()\n                                .toggleSubscript()\n                                .run()",
+        "editor\n                                .chain()\n                                .focus()\n                                .toggleSuperscript()\n                                .run()",
+        "editor\n                                .chain()\n                                .focus()\n                                .toggleBulletList()\n                                .run()",
+        "editor\n                                .chain()\n                                .focus()\n                                .toggleOrderedList()\n                                .run()",
+        "editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('left')\n                                    .run()",
+        "editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('center')\n                                    .run()",
+        "editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('right')\n                                    .run()",
+        "editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('justify')\n                                    .run()",
+        "editor\n                                .chain()\n                                .focus()\n                                .extendMarkRange('link')\n                                .unsetLink()\n                                .run()",
+        "editor\n                                .chain()\n                                .focus()\n                                .toggleBlockquote()\n                                .run()",
+        "editor\n                                .chain()\n                                .focus()\n                                .setHorizontalRule()\n                                .run()",
+        "editor\n                                .chain()\n                                .focus()\n                                .undo()\n                                .run()",
+        "editor\n                                .chain()\n                                .focus()\n                                .redo()\n                                .run()"
+      ],
+      "subscriptions": [
+        "useEditorState({\n            editor,\n\n            selector: ({\n                editor: currentEditor,\n            }) =>\n                currentEditor.isActive(\n                    'table'\n                ),\n        })"
+      ],
+      "helpers": [
+        {
+          "name": "clearFormatting",
+          "expression": "() => {\n        editor\n            .chain()\n            .focus()\n            .clearNodes()\n            .unsetAllMarks()\n            .run()\n    }"
+        }
+      ],
+      "directCommands": [],
+      "bindings": [
+        {
+          "kind": "FormatDropdown",
+          "expression": "<FormatDropdown editor={editor} />",
+          "conditions": []
+        },
+        {
+          "kind": "TableContextualToolbar",
+          "expression": "<TableContextualToolbar\n                            editor={editor}\n                        />",
+          "conditions": [
+            "mode === 'visual'",
+            "isInsideTable"
+          ]
+        },
+        {
+          "kind": "LinkDialog",
+          "expression": "<LinkDialog\n                editor={editor}\n                open={linkDialogOpen}\n                onClose={() => setLinkDialogOpen(false)}\n            />",
+          "conditions": []
+        },
+        {
+          "kind": "ImageDialog",
+          "expression": "<ImageDialog\n                editor={editor}\n                open={imageDialogOpen}\n                onClose={() => setImageDialogOpen(false)}\n                uploadUrl={imageUploadUrl}\n                onImageUpload={onImageUpload}\n            />",
+          "conditions": []
+        },
+        {
+          "kind": "VideoDialog",
+          "expression": "<VideoDialog\n                editor={editor}\n                open={videoDialogOpen}\n                onClose={() => setVideoDialogOpen(false)}\n            />",
+          "conditions": []
+        },
+        {
+          "kind": "TableDialog",
+          "expression": "<TableDialog\n                editor={editor}\n                open={tableDialogOpen}\n                onClose={() => setTableDialogOpen(false)}\n            />",
+          "conditions": []
+        },
+        {
+          "kind": "NewsBlockDialog",
+          "expression": "<NewsBlockDialog\n                editor={editor}\n                open={newsBlockDialogOpen}\n                onClose={() =>\n                    setNewsBlockDialogOpen(\n                        false\n                    )\n                }\n                onNewsSearch={\n                    onNewsSearch\n                }\n            />",
+          "conditions": []
+        }
+      ],
+      "effects": [],
+      "controls": [
+        {
+          "label": "Add image",
+          "kind": "button",
+          "handler": "() => setImageDialogOpen(true)",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": "mw-tiptap-action-button",
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Add video",
+          "kind": "button",
+          "handler": "() => setVideoDialogOpen(true)",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": "mw-tiptap-action-button",
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Insert table",
+          "kind": "button",
+          "handler": "() => setTableDialogOpen(true)",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": "mw-tiptap-action-button",
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Insert news block",
+          "kind": "button",
+          "handler": "() =>\n                        setNewsBlockDialogOpen(\n                            true\n                        )",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": "mw-tiptap-action-button",
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Visual editor",
+          "kind": "button",
+          "handler": "() =>\n                            onModeChange?.(\n                                'visual'\n                            )",
+          "active": null,
+          "disabled": null,
+          "pressed": "mode ===\n                            'visual'",
+          "className": "mode ===\n                            'visual'\n                                ? 'is-active'\n                                : undefined",
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "HTML code editor",
+          "kind": "button",
+          "handler": "() =>\n                            onModeChange?.(\n                                'code'\n                            )",
+          "active": null,
+          "disabled": null,
+          "pressed": "mode ===\n                            'code'",
+          "className": "mode ===\n                            'code'\n                                ? 'is-active'\n                                : undefined",
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Bold",
+          "kind": "EditorButton",
+          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .toggleBold()\n                                .run()",
+          "active": "editor.isActive('bold')",
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Italic",
+          "kind": "EditorButton",
+          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .toggleItalic()\n                                .run()",
+          "active": "editor.isActive('italic')",
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Underline",
+          "kind": "EditorButton",
+          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .toggleUnderline()\n                                .run()",
+          "active": "editor.isActive('underline')",
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Strike",
+          "kind": "EditorButton",
+          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .toggleStrike()\n                                .run()",
+          "active": "editor.isActive('strike')",
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Subscript",
+          "kind": "EditorButton",
+          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .toggleSubscript()\n                                .run()",
+          "active": "editor.isActive('subscript')",
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Superscript",
+          "kind": "EditorButton",
+          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .toggleSuperscript()\n                                .run()",
+          "active": "editor.isActive('superscript')",
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Bullet List",
+          "kind": "EditorButton",
+          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .toggleBulletList()\n                                .run()",
+          "active": "editor.isActive('bulletList')",
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Ordered List",
+          "kind": "EditorButton",
+          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .toggleOrderedList()\n                                .run()",
+          "active": "editor.isActive('orderedList')",
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Align Left",
+          "kind": "EditorButton",
+          "handler": "() =>\n                                editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('left')\n                                    .run()",
+          "active": "editor.isActive({\n                                textAlign: 'left',\n                            })",
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'",
+            "!isInsideTable"
+          ],
+          "options": []
+        },
+        {
+          "label": "Align Center",
+          "kind": "EditorButton",
+          "handler": "() =>\n                                editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('center')\n                                    .run()",
+          "active": "editor.isActive({\n                                textAlign: 'center',\n                            })",
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'",
+            "!isInsideTable"
+          ],
+          "options": []
+        },
+        {
+          "label": "Align Right",
+          "kind": "EditorButton",
+          "handler": "() =>\n                                editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('right')\n                                    .run()",
+          "active": "editor.isActive({\n                                textAlign: 'right',\n                            })",
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'",
+            "!isInsideTable"
+          ],
+          "options": []
+        },
+        {
+          "label": "Justify",
+          "kind": "EditorButton",
+          "handler": "() =>\n                                editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('justify')\n                                    .run()",
+          "active": "editor.isActive({\n                                textAlign: 'justify',\n                            })",
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'",
+            "!isInsideTable"
+          ],
+          "options": []
+        },
+        {
+          "label": "Insert or Edit Link",
+          "kind": "EditorButton",
+          "handler": "() => setLinkDialogOpen(true)",
+          "active": "editor.isActive('link')",
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Remove Link",
+          "kind": "EditorButton",
+          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .extendMarkRange('link')\n                                .unsetLink()\n                                .run()",
+          "active": null,
+          "disabled": "!editor.isActive('link')",
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Blockquote",
+          "kind": "EditorButton",
+          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .toggleBlockquote()\n                                .run()",
+          "active": "editor.isActive('blockquote')",
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Horizontal Rule",
+          "kind": "EditorButton",
+          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .setHorizontalRule()\n                                .run()",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Clear Formatting",
+          "kind": "EditorButton",
+          "handler": "clearFormatting",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Undo",
+          "kind": "EditorButton",
+          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .undo()\n                                .run()",
+          "active": null,
+          "disabled": "!editor.can().undo()",
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        },
+        {
+          "label": "Redo",
+          "kind": "EditorButton",
+          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .redo()\n                                .run()",
+          "active": null,
+          "disabled": "!editor.can().redo()",
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [
+            "mode === 'visual'"
+          ],
+          "options": []
+        }
+      ]
+    },
+    "components/toolbar/FormatDropdown.tsx": {
+      "chains": [
+        "editor\n                .chain()\n                .focus()\n                .setParagraph()\n                .run()",
+        "editor\n                .chain()\n                .focus()\n                .setHeading({\n                    level: 1,\n                })\n                .run()",
+        "editor\n                .chain()\n                .focus()\n                .setHeading({\n                    level: 2,\n                })\n                .run()",
+        "editor\n                .chain()\n                .focus()\n                .setHeading({\n                    level: 3,\n                })\n                .run()"
+      ],
+      "subscriptions": [],
+      "helpers": [
+        {
+          "name": "getCurrentFormat",
+          "expression": "() => {\n        if (\n            editor.isActive('heading', {\n                level: 1,\n            })\n        ) {\n            return 'h1'\n        }\n\n        if (\n            editor.isActive('heading', {\n                level: 2,\n            })\n        ) {\n            return 'h2'\n        }\n\n        if (\n            editor.isActive('heading', {\n                level: 3,\n            })\n        ) {\n            return 'h3'\n        }\n\n        return 'paragraph'\n    }"
+        },
+        {
+          "name": "handleChange",
+          "expression": "(\n        value: string\n    ) => {\n        if (value === 'paragraph') {\n            editor\n                .chain()\n                .focus()\n                .setParagraph()\n                .run()\n\n            return\n        }\n\n        if (value === 'h1') {\n            editor\n                .chain()\n                .focus()\n                .setHeading({\n                    level: 1,\n                })\n                .run()\n\n            return\n        }\n\n        if (value === 'h2') {\n            editor\n                .chain()\n                .focus()\n                .setHeading({\n                    level: 2,\n                })\n                .run()\n\n            return\n        }\n\n        if (value === 'h3') {\n            editor\n                .chain()\n                .focus()\n                .setHeading({\n                    level: 3,\n                })\n                .run()\n        }\n    }"
+        }
+      ],
+      "directCommands": [],
+      "bindings": [],
+      "effects": [],
+      "controls": [
+        {
+          "label": "Text format",
+          "kind": "select",
+          "handler": "(event) =>\n                handleChange(\n                    event.target.value\n                )",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": "mw-tiptap-format-select",
+          "value": "getCurrentFormat()",
+          "conditions": [],
+          "options": [
+            {
+              "value": "paragraph",
+              "label": "Paragraph"
+            },
+            {
+              "value": "h1",
+              "label": "Heading 1"
+            },
+            {
+              "value": "h2",
+              "label": "Heading 2"
+            },
+            {
+              "value": "h3",
+              "label": "Heading 3"
+            }
+          ]
+        }
+      ]
+    },
+    "components/toolbar/TableContextualToolbar.tsx": {
+      "chains": [
+        "editor\n                .chain()\n                .focus()\n                .updateAttributes(\n                    'tableHeader',\n                    attributes\n                )\n                .run()",
+        "editor\n            .chain()\n            .focus()\n            .updateAttributes(\n                'tableCell',\n                attributes\n            )\n            .run()",
+        "editor\n                            .chain()\n                            .focus()\n                            .addRowBefore()\n                            .run()",
+        "editor\n                            .chain()\n                            .focus()\n                            .addRowAfter()\n                            .run()",
+        "editor\n                            .chain()\n                            .focus()\n                            .deleteRow()\n                            .run()",
+        "editor\n                            .chain()\n                            .focus()\n                            .addColumnBefore()\n                            .run()",
+        "editor\n                            .chain()\n                            .focus()\n                            .addColumnAfter()\n                            .run()",
+        "editor\n                            .chain()\n                            .focus()\n                            .deleteColumn()\n                            .run()",
+        "editor\n                            .chain()\n                            .focus()\n                            .mergeCells()\n                            .run()",
+        "editor\n                            .chain()\n                            .focus()\n                            .splitCell()\n                            .run()",
+        "editor\n                            .chain()\n                            .focus()\n                            .toggleHeaderRow()\n                            .run()",
+        "editor\n                            .chain()\n                            .focus()\n                            .toggleHeaderColumn()\n                            .run()",
+        "editor\n                            .chain()\n                            .focus()\n                            .toggleHeaderCell()\n                            .run()",
+        "editor\n                            .chain()\n                            .focus()\n                            .deleteTable()\n                            .run()"
+      ],
+      "subscriptions": [
+        "useEditorState({\n            editor,\n\n            selector: ({\n                editor: currentEditor,\n            }) => {\n                const isHeader =\n                    currentEditor.isActive(\n                        'tableHeader'\n                    )\n\n                const cellAttributes =\n                    (\n                        isHeader\n                            ? currentEditor.getAttributes(\n                                  'tableHeader'\n                              )\n                            : currentEditor.getAttributes(\n                                  'tableCell'\n                              )\n                    ) as TableCellAttributes\n\n                return {\n                    textAlign:\n                        cellAttributes.textAlign ??\n                        null,\n\n                    verticalAlign:\n                        cellAttributes.verticalAlign ??\n                        null,\n\n                    backgroundColor:\n                        cellAttributes.backgroundColor ??\n                        null,\n\n                    textColor:\n                        cellAttributes.textColor ??\n                        null,\n                }\n            },\n        })"
+      ],
+      "helpers": [
+        {
+          "name": "updateCurrentTableCell",
+          "expression": "(\n        attributes: Record<\n            string,\n            unknown\n        >\n    ) => {\n        if (\n            editor.isActive(\n                'tableHeader'\n            )\n        ) {\n            editor\n                .chain()\n                .focus()\n                .updateAttributes(\n                    'tableHeader',\n                    attributes\n                )\n                .run()\n\n            return\n        }\n\n        editor\n            .chain()\n            .focus()\n            .updateAttributes(\n                'tableCell',\n                attributes\n            )\n            .run()\n    }"
+        }
+      ],
+      "directCommands": [],
+      "bindings": [
+        {
+          "kind": "TablePropertiesDialog",
+          "expression": "<TablePropertiesDialog\n                editor={editor}\n                open={propertiesOpen}\n                onClose={() =>\n                    setPropertiesOpen(\n                        false\n                    )\n                }\n            />",
+          "conditions": []
+        }
+      ],
+      "effects": [],
+      "controls": [
+        {
+          "label": "Row Above",
+          "kind": "button",
+          "handler": "() =>\n                        editor\n                            .chain()\n                            .focus()\n                            .addRowBefore()\n                            .run()",
+          "active": null,
+          "disabled": "!editor\n                            .can()\n                            .addRowBefore()",
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Row Below",
+          "kind": "button",
+          "handler": "() =>\n                        editor\n                            .chain()\n                            .focus()\n                            .addRowAfter()\n                            .run()",
+          "active": null,
+          "disabled": "!editor\n                            .can()\n                            .addRowAfter()",
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Delete Row",
+          "kind": "button",
+          "handler": "() =>\n                        editor\n                            .chain()\n                            .focus()\n                            .deleteRow()\n                            .run()",
+          "active": null,
+          "disabled": "!editor\n                            .can()\n                            .deleteRow()",
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Column Left",
+          "kind": "button",
+          "handler": "() =>\n                        editor\n                            .chain()\n                            .focus()\n                            .addColumnBefore()\n                            .run()",
+          "active": null,
+          "disabled": "!editor\n                            .can()\n                            .addColumnBefore()",
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Column Right",
+          "kind": "button",
+          "handler": "() =>\n                        editor\n                            .chain()\n                            .focus()\n                            .addColumnAfter()\n                            .run()",
+          "active": null,
+          "disabled": "!editor\n                            .can()\n                            .addColumnAfter()",
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Delete Column",
+          "kind": "button",
+          "handler": "() =>\n                        editor\n                            .chain()\n                            .focus()\n                            .deleteColumn()\n                            .run()",
+          "active": null,
+          "disabled": "!editor\n                            .can()\n                            .deleteColumn()",
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Align cell left",
+          "kind": "button",
+          "handler": "() =>\n                            updateCurrentTableCell({\n                                textAlign:\n                                    'left',\n                            })",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": "tableState.textAlign ===\n                            'left'\n                                ? 'is-active'\n                                : undefined",
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Align cell center",
+          "kind": "button",
+          "handler": "() =>\n                            updateCurrentTableCell({\n                                textAlign:\n                                    'center',\n                            })",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": "tableState.textAlign ===\n                            'center'\n                                ? 'is-active'\n                                : undefined",
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Align cell right",
+          "kind": "button",
+          "handler": "() =>\n                            updateCurrentTableCell({\n                                textAlign:\n                                    'right',\n                            })",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": "tableState.textAlign ===\n                            'right'\n                                ? 'is-active'\n                                : undefined",
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Justify cell text",
+          "kind": "button",
+          "handler": "() =>\n                            updateCurrentTableCell({\n                                textAlign:\n                                    'justify',\n                            })",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": "tableState.textAlign ===\n                            'justify'\n                                ? 'is-active'\n                                : undefined",
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Align top",
+          "kind": "button",
+          "handler": "() =>\n                            updateCurrentTableCell({\n                                verticalAlign:\n                                    'top',\n                            })",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": "tableState.verticalAlign ===\n                            'top'\n                                ? 'is-active'\n                                : undefined",
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Align middle",
+          "kind": "button",
+          "handler": "() =>\n                            updateCurrentTableCell({\n                                verticalAlign:\n                                    'middle',\n                            })",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": "tableState.verticalAlign ===\n                            'middle'\n                                ? 'is-active'\n                                : undefined",
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Align bottom",
+          "kind": "button",
+          "handler": "() =>\n                            updateCurrentTableCell({\n                                verticalAlign:\n                                    'bottom',\n                            })",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": "tableState.verticalAlign ===\n                            'bottom'\n                                ? 'is-active'\n                                : undefined",
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Cell background color",
+          "kind": "input",
+          "handler": "(\n                            event\n                        ) =>\n                            updateCurrentTableCell({\n                                backgroundColor:\n                                    event\n                                        .target\n                                        .value,\n                            })",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": "tableState.backgroundColor ??\n                            '#ffffff'",
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Clear Color",
+          "kind": "button",
+          "handler": "() =>\n                        updateCurrentTableCell({\n                            backgroundColor:\n                                null,\n                        })",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Cell text color",
+          "kind": "input",
+          "handler": "(\n                            event\n                        ) =>\n                            updateCurrentTableCell({\n                                textColor:\n                                    event\n                                        .target\n                                        .value,\n                            })",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": "tableState.textColor ??\n                            '#000000'",
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Clear Text",
+          "kind": "button",
+          "handler": "() =>\n                        updateCurrentTableCell({\n                            textColor:\n                                null,\n                        })",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Merge",
+          "kind": "button",
+          "handler": "() =>\n                        editor\n                            .chain()\n                            .focus()\n                            .mergeCells()\n                            .run()",
+          "active": null,
+          "disabled": "!editor\n                            .can()\n                            .mergeCells()",
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Split",
+          "kind": "button",
+          "handler": "() =>\n                        editor\n                            .chain()\n                            .focus()\n                            .splitCell()\n                            .run()",
+          "active": null,
+          "disabled": "!editor\n                            .can()\n                            .splitCell()",
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Header Row",
+          "kind": "button",
+          "handler": "() =>\n                        editor\n                            .chain()\n                            .focus()\n                            .toggleHeaderRow()\n                            .run()",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Header Column",
+          "kind": "button",
+          "handler": "() =>\n                        editor\n                            .chain()\n                            .focus()\n                            .toggleHeaderColumn()\n                            .run()",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Header Cell",
+          "kind": "button",
+          "handler": "() =>\n                        editor\n                            .chain()\n                            .focus()\n                            .toggleHeaderCell()\n                            .run()",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": null,
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Properties",
+          "kind": "button",
+          "handler": "() =>\n                        setPropertiesOpen(\n                            true\n                        )",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": "mw-table-toolbar-properties",
+          "value": null,
+          "conditions": [],
+          "options": []
+        },
+        {
+          "label": "Delete Table",
+          "kind": "button",
+          "handler": "() =>\n                        editor\n                            .chain()\n                            .focus()\n                            .deleteTable()\n                            .run()",
+          "active": null,
+          "disabled": null,
+          "pressed": null,
+          "className": "mw-table-toolbar-danger",
+          "value": null,
+          "conditions": [],
+          "options": []
+        }
+      ]
+    },
+    "components/toolbar/EditorButton.tsx": {
+      "chains": [],
+      "subscriptions": [],
+      "helpers": [],
+      "directCommands": [],
+      "bindings": [
+        {
+          "kind": "button",
+          "expression": "<button\n            {...props}\n            type=\"button\"\n            className={\n                classes\n            }\n            disabled={\n                disabled\n            }\n            title={\n                tooltip\n            }\n            aria-label={\n                tooltip\n            }\n            aria-pressed={\n                active\n                    ? true\n                    : undefined\n            }\n        >\n            {children}\n        </button>",
+          "conditions": []
+        }
+      ],
+      "effects": []
+    },
+    "components/toolbar/ToolbarGroup.tsx": {
+      "chains": [],
+      "subscriptions": [],
+      "helpers": [],
+      "directCommands": [],
+      "bindings": [],
+      "effects": []
+    },
+    "components/dialogs/LinkDialog.tsx": {
+      "chains": [
+        "editor\n                .chain()\n                .focus()\n                .extendMarkRange('link')\n                .setLink({\n                    href: normalizedUrl,\n                    target,\n                    rel,\n                })\n                .run()",
+        "editor\n                    .chain()\n                    .focus()\n                    .insertContent({\n                        type: 'text',\n\n                        text: text.trim(),\n\n                        marks: [\n                            {\n                                type: 'link',\n\n                                attrs: {\n                                    href:\n                                        normalizedUrl,\n\n                                    target,\n\n                                    rel,\n                                },\n                            },\n                        ],\n                    })\n                    .run()",
+        "editor\n                    .chain()\n                    .focus()\n                    .setLink({\n                        href: normalizedUrl,\n                        target,\n                        rel,\n                    })\n                    .run()",
+        "editor\n            .chain()\n            .focus()\n            .insertContent({\n                type: 'text',\n\n                text: linkText,\n\n                marks: [\n                    {\n                        type: 'link',\n\n                        attrs: {\n                            href: normalizedUrl,\n                            target,\n                            rel,\n                        },\n                    },\n                ],\n            })\n            .run()",
+        "editor\n            .chain()\n            .focus()\n            .extendMarkRange('link')\n            .unsetLink()\n            .run()"
+      ],
+      "subscriptions": [],
+      "helpers": [
+        {
+          "name": "handleInsert",
+          "expression": "() => {\n        if (!isSafeUrl(url)) {\n            setError(\n                'Please enter a valid link.'\n            )\n\n            return\n        }\n\n        const normalizedUrl =\n            normalizeUrl(url)\n\n        const target =\n            openInNewTab\n                ? '_blank'\n                : null\n\n        const rel =\n            openInNewTab\n                ? 'noopener noreferrer'\n                : null\n\n        const {\n            empty,\n        } = editor.state.selection\n\n        /*\n         * Existing link.\n         */\n\n        if (editor.isActive('link')) {\n            editor\n                .chain()\n                .focus()\n                .extendMarkRange('link')\n                .setLink({\n                    href: normalizedUrl,\n                    target,\n                    rel,\n                })\n                .run()\n\n            onClose()\n\n            return\n        }\n\n        /*\n         * Selected text.\n         */\n\n        if (!empty) {\n            if (\n                text.trim() &&\n                text !== originalText\n            ) {\n                editor\n                    .chain()\n                    .focus()\n                    .insertContent({\n                        type: 'text',\n\n                        text: text.trim(),\n\n                        marks: [\n                            {\n                                type: 'link',\n\n                                attrs: {\n                                    href:\n                                        normalizedUrl,\n\n                                    target,\n\n                                    rel,\n                                },\n                            },\n                        ],\n                    })\n                    .run()\n            } else {\n                editor\n                    .chain()\n                    .focus()\n                    .setLink({\n                        href: normalizedUrl,\n                        target,\n                        rel,\n                    })\n                    .run()\n            }\n\n            onClose()\n\n            return\n        }\n\n        /*\n         * No selection.\n         *\n         * Insert link text directly.\n         */\n\n        const linkText =\n            text.trim() ||\n            normalizedUrl\n\n        editor\n            .chain()\n            .focus()\n            .insertContent({\n                type: 'text',\n\n                text: linkText,\n\n                marks: [\n                    {\n                        type: 'link',\n\n                        attrs: {\n                            href: normalizedUrl,\n                            target,\n                            rel,\n                        },\n                    },\n                ],\n            })\n            .run()\n\n        onClose()\n    }"
+        },
+        {
+          "name": "handleRemove",
+          "expression": "() => {\n        editor\n            .chain()\n            .focus()\n            .extendMarkRange('link')\n            .unsetLink()\n            .run()\n\n        onClose()\n    }"
+        }
+      ],
+      "directCommands": [],
+      "bindings": [],
+      "effects": [
+        "useEffect(() => {\n        if (!open) {\n            return\n        }\n\n        const {\n            from,\n            to,\n        } = editor.state.selection\n\n        const selectedText =\n            editor.state.doc.textBetween(\n                from,\n                to,\n                ' '\n            )\n\n        const linkAttributes =\n            editor.getAttributes('link')\n\n        setText(selectedText)\n        setOriginalText(selectedText)\n\n        setUrl(\n            linkAttributes.href ?? ''\n        )\n\n        setOpenInNewTab(\n            linkAttributes.target ===\n                '_blank' ||\n                !linkAttributes.href\n        )\n\n        setError('')\n    }, [open, editor])"
+      ]
+    },
+    "components/dialogs/ImageDialog.tsx": {
+      "chains": [
+        "editor\n                .chain()\n                .focus()\n                .insertImageFigure({\n                    src,\n\n                    path:\n                        storagePath,\n\n                    alt:\n                        alt.trim(),\n\n                    caption:\n                        caption.trim(),\n\n                    align:\n                        'center',\n\n                    width:\n                        100,\n                })\n                .run()"
+      ],
+      "subscriptions": [],
+      "helpers": [
+        {
+          "name": "handleInsert",
+          "expression": "async () => {\n        try {\n            setError('')\n\n            let src =\n                imageUrl.trim()\n\n            let storagePath =\n                ''\n\n            /*\n            |--------------------------------------------------------------------------\n            | Uploaded image\n            |--------------------------------------------------------------------------\n            */\n\n            if (file) {\n                setUploading(true)\n\n                const result =\n                    await uploadImage(\n                        file\n                    )\n\n                src =\n                    result.url\n\n                storagePath =\n                    result.path ??\n                    ''\n            }\n\n            /*\n            |--------------------------------------------------------------------------\n            | Validate final image source\n            |--------------------------------------------------------------------------\n            */\n\n            if (!src) {\n                setError(\n                    'Please upload an image or enter an image URL.'\n                )\n\n                return\n            }\n\n            /*\n            |--------------------------------------------------------------------------\n            | Insert image node\n            |--------------------------------------------------------------------------\n            */\n\n            editor\n                .chain()\n                .focus()\n                .insertImageFigure({\n                    src,\n\n                    path:\n                        storagePath,\n\n                    alt:\n                        alt.trim(),\n\n                    caption:\n                        caption.trim(),\n\n                    align:\n                        'center',\n\n                    width:\n                        100,\n                })\n                .run()\n\n            onClose()\n        } catch (error) {\n            setError(\n                error instanceof Error\n                    ? error.message\n                    : 'Image upload failed.'\n            )\n        } finally {\n            setUploading(\n                false\n            )\n        }\n    }"
+        }
+      ],
+      "directCommands": [],
+      "bindings": [],
+      "effects": [
+        "useEffect(() => {\n        if (!open) {\n            return\n        }\n\n        setFile(null)\n        setPreview('')\n        setImageUrl('')\n        setAlt('')\n        setCaption('')\n        setError('')\n        setUploading(false)\n    }, [open])",
+        "useEffect(() => {\n        return () => {\n            if (\n                preview.startsWith(\n                    'blob:'\n                )\n            ) {\n                URL.revokeObjectURL(\n                    preview\n                )\n            }\n        }\n    }, [preview])"
+      ]
+    },
+    "components/dialogs/VideoDialog.tsx": {
+      "chains": [
+        "editor\n                .chain()\n                .focus()\n                .insertVideoEmbed({\n                    src:\n                        video.embedUrl,\n\n                    provider:\n                        video.provider,\n\n                    caption:\n                        caption.trim(),\n\n                    align:\n                        'center',\n\n                    width:\n                        100,\n                })\n                .run()"
+      ],
+      "subscriptions": [],
+      "helpers": [
+        {
+          "name": "handleInsert",
+          "expression": "() => {\n            setError('')\n\n            const video =\n                parseVideoUrl(\n                    url\n                )\n\n            if (\n                !video\n            ) {\n                setError(\n                    'Please enter a valid YouTube or Vimeo URL.'\n                )\n\n                return\n            }\n\n            editor\n                .chain()\n                .focus()\n                .insertVideoEmbed({\n                    src:\n                        video.embedUrl,\n\n                    provider:\n                        video.provider,\n\n                    caption:\n                        caption.trim(),\n\n                    align:\n                        'center',\n\n                    width:\n                        100,\n                })\n                .run()\n\n            onClose()\n        }"
+        }
+      ],
+      "directCommands": [],
+      "bindings": [],
+      "effects": [
+        "useEffect(() => {\n        if (!open) {\n            return\n        }\n\n        setUrl('')\n        setCaption('')\n        setError('')\n    }, [open])"
+      ]
+    },
+    "components/dialogs/TableDialog.tsx": {
+      "chains": [
+        "editor\n                .chain()\n                .focus()\n                .insertTable({\n                    rows:\n                        safeRows,\n\n                    cols:\n                        safeColumns,\n\n                    withHeaderRow:\n                        withHeader,\n                })\n                .run()"
+      ],
+      "subscriptions": [],
+      "helpers": [
+        {
+          "name": "handleInsert",
+          "expression": "() => {\n            const safeRows =\n                normalizeNumber(\n                    rows,\n                    1,\n                    20\n                )\n\n            const safeColumns =\n                normalizeNumber(\n                    columns,\n                    1,\n                    12\n                )\n\n            editor\n                .chain()\n                .focus()\n                .insertTable({\n                    rows:\n                        safeRows,\n\n                    cols:\n                        safeColumns,\n\n                    withHeaderRow:\n                        withHeader,\n                })\n                .run()\n\n            onClose()\n        }"
+        }
+      ],
+      "directCommands": [],
+      "bindings": [],
+      "effects": [
+        "useEffect(() => {\n        if (!open) {\n            return\n        }\n\n        setRows(\n            3\n        )\n\n        setColumns(\n            3\n        )\n\n        setWithHeader(\n            true\n        )\n    }, [open])"
+      ]
+    },
+    "components/dialogs/NewsBlockDialog.tsx": {
+      "chains": [
+        "editor\n                .chain()\n                .focus()\n                .insertNewsBlock({\n                    newsId:\n                        data.id,\n\n                    title:\n                        data.title,\n\n                    url:\n                        data.url,\n\n                    thumbnail:\n                        data.thumbnail,\n\n                    category:\n                        data.category,\n\n                    excerpt:\n                        data.excerpt,\n\n                    style:\n                        data.style,\n                })\n                .run()"
+      ],
+      "subscriptions": [],
+      "helpers": [],
+      "directCommands": [],
+      "bindings": [],
+      "effects": [
+        "useEffect(() => {\n        if (!open) {\n            return\n        }\n\n        setTitle(\n            initialData?.title ??\n            ''\n        )\n\n        setUrl(\n            initialData?.url ??\n            ''\n        )\n\n        setThumbnail(\n            initialData?.thumbnail ??\n            ''\n        )\n\n        setCategory(\n            initialData?.category ??\n            ''\n        )\n\n        setExcerpt(\n            initialData?.excerpt ??\n            ''\n        )\n\n        setStyle(\n            initialData?.style ??\n            'card'\n        )\n\n        setError('')\n        setSearchQuery('')\n        setSearchResults([])\n        setSearchError('')\n        setSearching(false)\n    }, [\n        initialData,\n        open,\n    ])",
+        "useEffect(() => {\n        if (\n            !open ||\n            !onNewsSearch\n        ) {\n            return\n        }\n\n        const query =\n            searchQuery.trim()\n\n        if (\n            query.length <\n            2\n        ) {\n            setSearchResults([])\n            setSearchError('')\n            setSearching(false)\n\n            return\n        }\n\n        const requestId =\n            ++searchRequestRef.current\n\n        const timer =\n            window.setTimeout(\n                async () => {\n                    try {\n                        setSearching(\n                            true\n                        )\n                        setSearchError(\n                            ''\n                        )\n\n                        const results =\n                            await onNewsSearch(\n                                query\n                            )\n\n                        if (\n                            requestId !==\n                            searchRequestRef.current\n                        ) {\n                            return\n                        }\n\n                        setSearchResults(\n                            Array.isArray(\n                                results\n                            )\n                                ? results\n                                : []\n                        )\n                    } catch (\n                        searchFailure\n                    ) {\n                        if (\n                            requestId !==\n                            searchRequestRef.current\n                        ) {\n                            return\n                        }\n\n                        setSearchResults(\n                            []\n                        )\n\n                        setSearchError(\n                            searchFailure instanceof\n                                Error\n                                ? searchFailure.message\n                                : 'News search failed.'\n                        )\n                    } finally {\n                        if (\n                            requestId ===\n                            searchRequestRef.current\n                        ) {\n                            setSearching(\n                                false\n                            )\n                        }\n                    }\n                },\n                350\n            )\n\n        return () => {\n            window.clearTimeout(\n                timer\n            )\n        }\n    }, [\n        onNewsSearch,\n        open,\n        searchQuery,\n    ])"
+      ]
+    },
+    "components/dialogs/TablePropertiesDialog.tsx": {
+      "chains": [
+        "editor\n            .chain()\n            .focus()\n            .updateAttributes(\n                'table',\n                {\n                    widthMode,\n                    tableAlign,\n\n                    cellPadding:\n                        safePadding,\n\n                    borderColor,\n\n                    borderWidth:\n                        safeBorderWidth,\n\n                    borderStyle,\n                }\n            )\n            .run()"
+      ],
+      "subscriptions": [],
+      "helpers": [],
+      "directCommands": [],
+      "bindings": [],
+      "effects": [
+        "useEffect(() => {\n        if (!open) {\n            return\n        }\n\n        const attributes =\n            editor.getAttributes(\n                'table'\n            )\n\n        const currentWidth =\n            attributes.widthMode\n\n        setWidthMode(\n            currentWidth ===\n                'auto' ||\n                currentWidth ===\n                    '50' ||\n                currentWidth ===\n                    '75'\n                ? currentWidth\n                : 'full'\n        )\n\n        setTableAlign(\n            attributes.tableAlign ===\n                'left' ||\n                attributes.tableAlign ===\n                    'right'\n                ? attributes.tableAlign\n                : 'center'\n        )\n\n        setCellPadding(\n            Number(\n                attributes.cellPadding ??\n                10\n            )\n        )\n\n        setBorderColor(\n            attributes.borderColor ??\n            '#d4d4d4'\n        )\n\n        setBorderWidth(\n            Number(\n                attributes.borderWidth ??\n                1\n            )\n        )\n\n        setBorderStyle(\n            attributes.borderStyle ===\n                'dashed' ||\n                attributes.borderStyle ===\n                    'dotted'\n                ? attributes.borderStyle\n                : 'solid'\n        )\n    }, [\n        editor,\n        open,\n    ])"
+      ]
+    },
+    "components/dialogs/Dialog.tsx": {
+      "chains": [],
+      "subscriptions": [],
+      "helpers": [],
+      "directCommands": [],
+      "bindings": [],
+      "effects": [
+        "useEffect(() => {\n        if (!open) {\n            return\n        }\n\n        const handleKeyDown = (\n            event: KeyboardEvent\n        ) => {\n            if (event.key === 'Escape') {\n                onClose()\n            }\n        }\n\n        document.addEventListener(\n            'keydown',\n            handleKeyDown\n        )\n\n        const previousOverflow =\n            document.body.style.overflow\n\n        document.body.style.overflow =\n            'hidden'\n\n        return () => {\n            document.removeEventListener(\n                'keydown',\n                handleKeyDown\n            )\n\n            document.body.style.overflow =\n                previousOverflow\n        }\n    }, [open, onClose])"
+      ]
+    },
+    "components/TiptapEditor.tsx": {
+      "chains": [],
+      "subscriptions": [
+        "useEditor({\n            extensions,\n\n            content:\n                sanitizeEditorHtml(\n                    value\n                ),\n\n            editorProps: {\n                attributes: {\n                    class:\n                        'mw-tiptap-content',\n\n                    style:\n                        `min-height: ${minHeight}px`,\n                },\n            },\n\n            onUpdate: ({\n                editor:\n                    currentEditor,\n            }) => {\n                if (\n                    mode !==\n                    'visual'\n                ) {\n                    return\n                }\n\n                const html =\n                    sanitizeEditorHtml(\n                        currentEditor\n                            .getHTML()\n                    )\n\n                setSourceHtml(\n                    html\n                )\n\n                onChange?.(\n                    html\n                )\n            },\n        })"
+      ],
+      "helpers": [
+        {
+          "name": "switchMode",
+          "expression": "(\n        nextMode: EditorMode\n    ) => {\n        if (\n            nextMode ===\n            mode\n        ) {\n            return\n        }\n\n        if (\n            nextMode ===\n            'code'\n        ) {\n            const cleanHtml =\n                sanitizeEditorHtml(\n                    editor.getHTML()\n                )\n\n            setSourceHtml(\n                cleanHtml\n            )\n\n            setMode(\n                'code'\n            )\n\n            return\n        }\n\n        const cleanHtml =\n            sanitizeEditorHtml(\n                sourceHtml\n            )\n\n        editor.commands.setContent(\n            cleanHtml,\n            {\n                emitUpdate:\n                    false,\n            }\n        )\n\n        const normalizedHtml =\n            sanitizeEditorHtml(\n                editor.getHTML()\n            )\n\n        setSourceHtml(\n            normalizedHtml\n        )\n\n        onChange?.(\n            normalizedHtml\n        )\n\n        setMode(\n            'visual'\n        )\n    }"
+        }
+      ],
+      "directCommands": [
+        "editor.commands.setContent(\n                cleanValue,\n                {\n                    emitUpdate:\n                        false,\n                }\n            )",
+        "editor.commands.setContent(\n            cleanHtml,\n            {\n                emitUpdate:\n                    false,\n            }\n        )"
+      ],
+      "bindings": [
+        {
+          "kind": "EditorToolbar",
+          "expression": "<EditorToolbar\n                editor={\n                    editor\n                }\n                imageUploadUrl={\n                    imageUploadUrl\n                }\n                onImageUpload={\n                    onImageUpload\n                }\n                onNewsSearch={\n                    onNewsSearch\n                }\n                mode={\n                    mode\n                }\n                onModeChange={\n                    switchMode\n                }\n            />",
+          "conditions": []
+        },
+        {
+          "kind": "EditorContent",
+          "expression": "<EditorContent\n                    editor={\n                        editor\n                    }\n                />",
+          "conditions": [
+            "mode ===\n            'visual'"
+          ]
+        },
+        {
+          "kind": "CodeEditor",
+          "expression": "<CodeEditor\n                    value={\n                        sourceHtml\n                    }\n                    onChange={\n                        handleSourceChange\n                    }\n                    minHeight={\n                        minHeight\n                    }\n                />",
+          "conditions": [
+            "NOT mode ===\n            'visual'"
+          ]
+        }
+      ],
+      "effects": [
+        "useEffect(() => {\n        if (\n            !editor ||\n            mode ===\n                'code'\n        ) {\n            return\n        }\n\n        const cleanValue =\n            sanitizeEditorHtml(\n                value\n            )\n\n        const currentHtml =\n            sanitizeEditorHtml(\n                editor.getHTML()\n            )\n\n        if (\n            cleanValue !==\n            currentHtml\n        ) {\n            editor.commands.setContent(\n                cleanValue,\n                {\n                    emitUpdate:\n                        false,\n                }\n            )\n\n            setSourceHtml(\n                cleanValue\n            )\n        }\n    }, [\n        editor,\n        mode,\n        value,\n    ])"
+      ]
+    },
+    "extensions/editorExtensions.ts": {
+      "chains": [],
+      "subscriptions": [],
+      "helpers": [
+        {
+          "name": "createEditorExtensions",
+          "expression": "export function createEditorExtensions({\n    imageUploadUrl =\n        '/tiptap-editor/media',\n\n    onImageUpload,\n}: EditorExtensionOptions = {}) {\n    return [\n        StarterKit.configure({\n            heading: {\n                levels: [\n                    1,\n                    2,\n                    3,\n                ],\n            },\n\n            link: {\n                openOnClick:\n                    false,\n\n                autolink:\n                    true,\n\n                linkOnPaste:\n                    true,\n\n                defaultProtocol:\n                    'https',\n            },\n        }),\n\n        TextAlign.configure({\n            types: [\n                'heading',\n                'paragraph',\n            ],\n\n            alignments: [\n                'left',\n                'center',\n                'right',\n                'justify',\n            ],\n        }),\n\n        Subscript,\n\n        Superscript,\n\n        ImageFigure.configure({\n            imageUploadUrl,\n\n            onImageUpload,\n        }),\n\n        VideoEmbed,\n\n        NewsBlock,\n\n        CustomTable.configure({\n            resizable:\n                true,\n\n            lastColumnResizable:\n                true,\n\n            allowTableNodeSelection:\n                true,\n        }),\n\n        TableRow,\n\n        CustomTableHeader,\n\n        CustomTableCell,\n    ]\n}"
+        }
+      ],
+      "directCommands": [],
+      "bindings": [],
+      "effects": []
+    },
+    "utils/sanitizeHtml.ts": {
+      "chains": [],
+      "subscriptions": [],
+      "helpers": [
+        {
+          "name": "ALLOWED_TAGS",
+          "expression": "[\n    'p',\n    'br',\n    'strong',\n    'b',\n    'em',\n    'i',\n    'u',\n    's',\n    'sub',\n    'sup',\n    'h1',\n    'h2',\n    'h3',\n    'ul',\n    'ol',\n    'li',\n    'blockquote',\n    'hr',\n    'a',\n    'span',\n    'div',\n    'figure',\n    'figcaption',\n    'img',\n    'iframe',\n    'article',\n    'table',\n    'thead',\n    'tbody',\n    'tfoot',\n    'tr',\n    'th',\n    'td',\n    'colgroup',\n    'col',\n] as const"
+        },
+        {
+          "name": "ALLOWED_ATTR",
+          "expression": "[\n    'href',\n    'target',\n    'rel',\n    'src',\n    'alt',\n    'title',\n    'class',\n    'style',\n    'loading',\n    'decoding',\n    'allow',\n    'allowfullscreen',\n    'referrerpolicy',\n    'rowspan',\n    'colspan',\n    'colwidth',\n    ...SAFE_DATA_ATTRIBUTES,\n] as const"
+        }
+      ],
+      "directCommands": [],
+      "bindings": [],
+      "effects": []
+    }
+  }
+}

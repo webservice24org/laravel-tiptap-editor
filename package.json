@@ -41,7 +41,9 @@
         "test:consumer": "node tools/run-consumer-compatibility.cjs",
         "test:archive": "node --test tools/archive-contract.test.cjs",
         "pack:verified": "node tools/run-archive-compatibility.cjs pack",
-        "check:archive": "node tools/run-archive-compatibility.cjs verify"
+        "check:archive": "node tools/run-archive-compatibility.cjs verify",
+        "test:toolbar": "node --test tools/toolbar-contract.test.cjs",
+        "check:toolbar": "node tools/toolbar-contract.cjs"
     },
     "peerDependencies": {
         "@tiptap/core": "^3.32.0",
