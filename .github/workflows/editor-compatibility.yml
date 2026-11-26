@@ -1,0 +1,152 @@
+name: Editor compatibility
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    name: Discover compatibility matrix
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      latest: ${{ steps.matrix.outputs.latest }}
+      lowest: ${{ steps.matrix.outputs.lowest }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # 2.36.0
+        with:
+          php-version: '8.5'
+          extensions: dom, fileinfo, libxml, mbstring, xml, xmlwriter
+          coverage: none
+          tools: composer:v2
+      - name: Validate and export matrix
+        id: matrix
+        shell: bash
+        run: |
+          php tools/compatibility-matrix.php --check
+          latest="$(php tools/compatibility-matrix.php --github)"
+          lowest="$(php tools/compatibility-matrix.php --github-lowest)"
+          printf 'latest=%s\nlowest=%s\n' "$latest" "$lowest" >> "$GITHUB_OUTPUT"
+
+  latest:
+    name: Required / ${{ matrix.id }}
+    needs: discover
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover.outputs.latest) }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # 2.36.0
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, fileinfo, libxml, mbstring, xml, xmlwriter, curl, openssl, pdo_sqlite, sqlite3, tokenizer, ctype, filter, iconv
+          coverage: none
+          tools: composer:v2
+      - name: Run compatibility gates
+        shell: bash
+        env:
+          LANE_ID: ${{ matrix.id }}
+          LARAVEL_MAJOR: ${{ matrix.laravel }}
+          FRAMEWORK_CONSTRAINT: ${{ matrix.framework }}
+          TESTBENCH_CONSTRAINT: ${{ matrix.testbench }}
+          PHPUNIT_CONSTRAINT: ${{ matrix.phpunit }}
+          DEPENDENCY_POLICY: ${{ matrix.policy }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/editor-compatibility"
+          bash tools/ci-compatibility-lane.sh 2>&1 | tee "$RUNNER_TEMP/editor-compatibility/execution.log"
+      - name: Collect dependency evidence and check manifest
+        if: always()
+        shell: bash
+        run: |
+          report="$RUNNER_TEMP/editor-compatibility"
+          mkdir -p "$report"
+          if [ -f "$report/resolution-started" ] && [ -f composer.lock ]; then cp composer.lock "$report/composer.lock"; fi
+          if [ -f vendor/composer/installed.json ]; then cp vendor/composer/installed.json "$report/installed.json"; fi
+          git diff --exit-code HEAD -- composer.json
+      - name: Upload compatibility evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ${{ matrix.id }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/editor-compatibility/
+          if-no-files-found: warn
+          retention-days: 14
+
+  lowest:
+    name: Lower-bound probe / ${{ matrix.id }}
+    needs: discover
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover.outputs.lowest) }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # 2.36.0
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, fileinfo, libxml, mbstring, xml, xmlwriter, curl, openssl, pdo_sqlite, sqlite3, tokenizer, ctype, filter, iconv
+          coverage: none
+          tools: composer:v2
+      - name: Run compatibility gates
+        shell: bash
+        env:
+          LANE_ID: ${{ matrix.id }}
+          LARAVEL_MAJOR: ${{ matrix.laravel }}
+          FRAMEWORK_CONSTRAINT: ${{ matrix.framework }}
+          TESTBENCH_CONSTRAINT: ${{ matrix.testbench }}
+          PHPUNIT_CONSTRAINT: ${{ matrix.phpunit }}
+          DEPENDENCY_POLICY: ${{ matrix.policy }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/editor-compatibility"
+          bash tools/ci-compatibility-lane.sh 2>&1 | tee "$RUNNER_TEMP/editor-compatibility/execution.log"
+      - name: Collect dependency evidence and check manifest
+        if: always()
+        shell: bash
+        run: |
+          report="$RUNNER_TEMP/editor-compatibility"
+          mkdir -p "$report"
+          if [ -f "$report/resolution-started" ] && [ -f composer.lock ]; then cp composer.lock "$report/composer.lock"; fi
+          if [ -f vendor/composer/installed.json ]; then cp vendor/composer/installed.json "$report/installed.json"; fi
+          git diff --exit-code HEAD -- composer.json
+      - name: Upload compatibility evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ${{ matrix.id }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/editor-compatibility/
+          if-no-files-found: warn
+          retention-days: 14
+
+  required-gate:
+    name: Required compatibility gate
+    if: always()
+    needs: [discover, latest]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify all required jobs passed
+        shell: bash
+        env:
+          DISCOVERY_RESULT: ${{ needs.discover.result }}
+          LATEST_RESULT: ${{ needs.latest.result }}
+        run: |
+          test "$DISCOVERY_RESULT" = success
+          test "$LATEST_RESULT" = success
+          echo 'All seven required compatibility lanes passed.'
