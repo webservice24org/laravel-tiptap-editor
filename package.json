@@ -36,7 +36,9 @@
         "check:types": "node tools/declaration-contract.cjs verify && tsc -p tsconfig.declarations.json && tsc -p tsconfig.declarations.nodenext.json",
         "test:types": "node --test tools/declaration-contract.test.cjs",
         "check:bundle": "node --check dist/index.js && node tools/bundle-contract.cjs",
-        "test:bundle": "node --test tools/bundle-contract.test.cjs"
+        "test:bundle": "node --test tools/bundle-contract.test.cjs",
+        "test:consumer:contract": "node --test tools/consumer-contract.test.cjs",
+        "test:consumer": "node tools/run-consumer-compatibility.cjs"
     },
     "peerDependencies": {
         "@tiptap/core": "^3.32.0",
