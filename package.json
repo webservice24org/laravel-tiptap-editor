@@ -24,7 +24,7 @@
     ],
     "scripts": {
         "clean": "rimraf dist",
-        "build": "npm run clean && vite build && npm run build:types && npm run check:types",
+        "build": "npm run clean && vite build && npm run build:types && npm run check:types && npm run check:bundle",
         "typecheck": "tsc --noEmit",
         "prepublishOnly": "npm run build",
         "check:runtime": "node tools/check-node-runtime.cjs",
@@ -34,7 +34,9 @@
         "build:types": "tsc -p tsconfig.build.json && node tools/declaration-contract.cjs normalize",
         "prebuild:types": "node tools/check-node-runtime.cjs",
         "check:types": "node tools/declaration-contract.cjs verify && tsc -p tsconfig.declarations.json && tsc -p tsconfig.declarations.nodenext.json",
-        "test:types": "node --test tools/declaration-contract.test.cjs"
+        "test:types": "node --test tools/declaration-contract.test.cjs",
+        "check:bundle": "node --check dist/index.js && node tools/bundle-contract.cjs",
+        "test:bundle": "node --test tools/bundle-contract.test.cjs"
     },
     "peerDependencies": {
         "@tiptap/core": "^3.32.0",

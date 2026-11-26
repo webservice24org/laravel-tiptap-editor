@@ -48,10 +48,12 @@ jobs:
       - name: Typecheck and production build smoke test
         run: |
           npm run test:types 2>&1 | tee node-build-evidence/declaration-tests.log
+          npm run test:bundle 2>&1 | tee node-build-evidence/bundle-tests.log
           npm run typecheck 2>&1 | tee node-build-evidence/typecheck.log
           npm run build 2>&1 | tee node-build-evidence/build.log
           git diff --exit-code HEAD -- package.json package-lock.json
           node tools/declaration-contract.cjs verify node-build-evidence/declaration-summary.json
+          node tools/bundle-contract.cjs node-build-evidence/bundle-summary.json
           node tools/node-build-evidence.cjs node-build-evidence "$(npm --version)" "$EXPECTED_NODE_MAJOR"
       - name: Upload build evidence
         if: always()
