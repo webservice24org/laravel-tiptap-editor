@@ -3,14 +3,14 @@
   "files": {
     "components/toolbar/EditorToolbar.tsx": {
       "chains": [
+        "scriptChain(scratch, mark).run()",
+        "scriptChain(editor.chain().focus(), mark).run()",
         "editor\n            .chain()\n            .focus()\n            .clearNodes()\n            .unsetAllMarks()\n            .run()",
         "currentEditor.can().chain().clearNodes().unsetAllMarks().run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleBold()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleItalic()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleUnderline()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleStrike()\n                                .run()",
-        "editor\n                                .chain()\n                                .focus()\n                                .toggleSubscript()\n                                .run()",
-        "editor\n                                .chain()\n                                .focus()\n                                .toggleSuperscript()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleBulletList()\n                                .run()",
         "editor\n                                .chain()\n                                .focus()\n                                .toggleOrderedList()\n                                .run()",
         "editor\n                                    .chain()\n                                    .focus()\n                                    .setTextAlign('left')\n                                    .run()",
@@ -24,9 +24,21 @@
         "editor\n                                .chain()\n                                .focus()\n                                .redo()\n                                .run()"
       ],
       "subscriptions": [
-        "useEditorState({\n        editor,\n        selector: ({ editor: currentEditor }) => ({\n            isInsideTable: currentEditor.isActive('table'),\n            bold: currentEditor.isActive('bold'),\n            canBold: currentEditor.isEditable && currentEditor.can().toggleBold(),\n            italic: currentEditor.isActive('italic'),\n            canItalic: currentEditor.isEditable && currentEditor.can().toggleItalic(),\n            underline: currentEditor.isActive('underline'),\n            canUnderline: currentEditor.isEditable && currentEditor.can().toggleUnderline(),\n            strike: currentEditor.isActive('strike'),\n            canStrike: currentEditor.isEditable && currentEditor.can().toggleStrike(),\n            subscript: currentEditor.isActive('subscript'),\n            canSubscript: currentEditor.isEditable && currentEditor.can().toggleSubscript(),\n            superscript: currentEditor.isActive('superscript'),\n            canSuperscript: currentEditor.isEditable && currentEditor.can().toggleSuperscript(),\n            canClear: currentEditor.isEditable && currentEditor.can().chain().clearNodes().unsetAllMarks().run(),\n        }),\n    })"
+        "useEditorState({\n        editor,\n        selector: ({ editor: currentEditor }) => ({\n            isInsideTable: currentEditor.isActive('table'),\n            bold: currentEditor.isActive('bold'),\n            canBold: currentEditor.isEditable && currentEditor.can().toggleBold(),\n            italic: currentEditor.isActive('italic'),\n            canItalic: currentEditor.isEditable && currentEditor.can().toggleItalic(),\n            underline: currentEditor.isActive('underline'),\n            canUnderline: currentEditor.isEditable && currentEditor.can().toggleUnderline(),\n            strike: currentEditor.isActive('strike'),\n            canStrike: currentEditor.isEditable && currentEditor.can().toggleStrike(),\n            subscript: currentEditor.isActive('subscript'),\n            canSubscript: canToggleScript(currentEditor, 'subscript'),\n            superscript: currentEditor.isActive('superscript'),\n            canSuperscript: canToggleScript(currentEditor, 'superscript'),\n            canClear: currentEditor.isEditable && currentEditor.can().chain().clearNodes().unsetAllMarks().run(),\n        }),\n    })"
       ],
       "helpers": [
+        {
+          "name": "scriptChain",
+          "expression": "function scriptChain(chain: ChainedCommands, mark: ScriptMark) {\n    return mark === 'subscript'\n        ? chain.unsetSuperscript().toggleSubscript()\n        : chain.unsetSubscript().toggleSuperscript()\n}"
+        },
+        {
+          "name": "canToggleScript",
+          "expression": "function canToggleScript(editor: Editor, mark: ScriptMark): boolean {\n    if (!editor.isEditable || editor.isDestroyed) return false\n\n    // Tiptap 3.32.0 can() suppresses mutations, so a normal can().chain()\n    // cannot model removal of an excluding mark. An explicit start transaction\n    // lets CommandManager run mark commands without dispatching to the view.\n    // No focus command, plugin dispatch, or document update is used in this probe.\n    const scratch = new CommandManager({ editor }).createChain(editor.state.tr)\n    return scriptChain(scratch, mark).run()\n}"
+        },
+        {
+          "name": "applyScript",
+          "expression": "function applyScript(editor: Editor, mark: ScriptMark): boolean {\n    if (!canToggleScript(editor, mark)) return false\n    return scriptChain(editor.chain().focus(), mark).run()\n}"
+        },
         {
           "name": "clearFormatting",
           "expression": "() => {\n        editor\n            .chain()\n            .focus()\n            .clearNodes()\n            .unsetAllMarks()\n            .run()\n    }"
@@ -216,7 +228,7 @@
         {
           "label": "Subscript",
           "kind": "EditorButton",
-          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .toggleSubscript()\n                                .run()",
+          "handler": "() => applyScript(editor, 'subscript')",
           "active": "formatting.subscript",
           "disabled": "!formatting.canSubscript",
           "pressed": null,
@@ -231,7 +243,7 @@
         {
           "label": "Superscript",
           "kind": "EditorButton",
-          "handler": "() =>\n                            editor\n                                .chain()\n                                .focus()\n                                .toggleSuperscript()\n                                .run()",
+          "handler": "() => applyScript(editor, 'superscript')",
           "active": "formatting.superscript",
           "disabled": "!formatting.canSuperscript",
           "pressed": null,

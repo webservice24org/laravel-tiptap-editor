@@ -7,6 +7,7 @@ import type {
 } from '@tiptap/react'
 
 import { useState } from 'react'
+import { CommandManager, type ChainedCommands } from '@tiptap/core'
 
 import EditorButton from './EditorButton'
 import ToolbarGroup from './ToolbarGroup'
@@ -52,6 +53,32 @@ import {
     UnlinkIcon,
     MediaIcon,
 } from '../icons/EditorIcons'
+
+type ScriptMark = 'subscript' | 'superscript'
+
+// Use the same ordering for the capability probe and the actual action.
+// The opposing mark must be removed before the target's ordinary toggle.
+function scriptChain(chain: ChainedCommands, mark: ScriptMark) {
+    return mark === 'subscript'
+        ? chain.unsetSuperscript().toggleSubscript()
+        : chain.unsetSubscript().toggleSuperscript()
+}
+
+function canToggleScript(editor: Editor, mark: ScriptMark): boolean {
+    if (!editor.isEditable || editor.isDestroyed) return false
+
+    // Tiptap 3.32.0 can() suppresses mutations, so a normal can().chain()
+    // cannot model removal of an excluding mark. An explicit start transaction
+    // lets CommandManager run mark commands without dispatching to the view.
+    // No focus command, plugin dispatch, or document update is used in this probe.
+    const scratch = new CommandManager({ editor }).createChain(editor.state.tr)
+    return scriptChain(scratch, mark).run()
+}
+
+function applyScript(editor: Editor, mark: ScriptMark): boolean {
+    if (!canToggleScript(editor, mark)) return false
+    return scriptChain(editor.chain().focus(), mark).run()
+}
 
 interface EditorToolbarProps {
     editor: Editor
@@ -127,9 +154,9 @@ export default function EditorToolbar({
             strike: currentEditor.isActive('strike'),
             canStrike: currentEditor.isEditable && currentEditor.can().toggleStrike(),
             subscript: currentEditor.isActive('subscript'),
-            canSubscript: currentEditor.isEditable && currentEditor.can().toggleSubscript(),
+            canSubscript: canToggleScript(currentEditor, 'subscript'),
             superscript: currentEditor.isActive('superscript'),
-            canSuperscript: currentEditor.isEditable && currentEditor.can().toggleSuperscript(),
+            canSuperscript: canToggleScript(currentEditor, 'superscript'),
             canClear: currentEditor.isEditable && currentEditor.can().chain().clearNodes().unsetAllMarks().run(),
         }),
     })
@@ -325,13 +352,7 @@ export default function EditorToolbar({
                         disabled={!formatting.canSubscript}
                         onMouseDown={event => event.preventDefault()}
                         tooltip="Subscript"
-                        onClick={() =>
-                            editor
-                                .chain()
-                                .focus()
-                                .toggleSubscript()
-                                .run()
-                        }
+                        onClick={() => applyScript(editor, 'subscript')}
                     >
                         <SubscriptIcon />
                     </EditorButton>
@@ -341,13 +362,7 @@ export default function EditorToolbar({
                         disabled={!formatting.canSuperscript}
                         onMouseDown={event => event.preventDefault()}
                         tooltip="Superscript"
-                        onClick={() =>
-                            editor
-                                .chain()
-                                .focus()
-                                .toggleSuperscript()
-                                .run()
-                        }
+                        onClick={() => applyScript(editor, 'superscript')}
                     >
                         <SuperscriptIcon />
                     </EditorButton>

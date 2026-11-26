@@ -3,6 +3,8 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
+const vm=require('node:vm');
+const ts=require('typescript');
 const {parse,inspectControls,inspectSource,inventory,verify,totals}=require('./toolbar-contract.cjs');
 const root=path.resolve(__dirname,'..');
 const expected=JSON.parse(fs.readFileSync(path.join(root,'tests/Toolbar/command-inventory.json'),'utf8'));
@@ -43,8 +45,13 @@ for (const mark of ['bold','italic','underline','strike','subscript','superscrip
         assert.equal(control.active,'formatting.'+mark);
         assert.equal(control.disabled,'!formatting.can'+title);
         assert.match(control.mouseDown,/preventDefault/);
-        assert.match(control.handler,new RegExp('toggle'+title+'\\('));
-        assert.ok(source.subscriptions.some(s=>s.includes("currentEditor.isActive('"+mark+"')")&&s.includes('currentEditor.can().toggle'+title+'()')));
+        if (mark === 'subscript' || mark === 'superscript') {
+            assert.equal(control.handler,`()=> applyScript(editor, '${mark}')`.replace('()=>','() =>'));
+            assert.ok(source.subscriptions.some(s=>s.includes("currentEditor.isActive('"+mark+"')")&&s.includes(`canToggleScript(currentEditor, '${mark}')`)));
+        } else {
+            assert.match(control.handler,new RegExp('toggle'+title+'\\('));
+            assert.ok(source.subscriptions.some(s=>s.includes("currentEditor.isActive('"+mark+"')")&&s.includes('currentEditor.can().toggle'+title+'()')));
+        }
     });
 }
 test('clear formatting retains block and mark commands with availability and selection guard',()=>{
@@ -63,4 +70,43 @@ test('script marks exclude one another in the shared extension factory',()=>{
     const source=actual.files['extensions/editorExtensions.ts'];const factory=source.helpers.find(h=>h.name==='createEditorExtensions').expression;
     assert.match(factory,/Subscript\.extend\(\{ excludes: 'superscript' \}\)/);
     assert.match(factory,/Superscript\.extend\(\{ excludes: 'subscript' \}\)/);
+});
+
+// Execute the actual isolated toolbar helpers with an instrumented command-chain
+// double. These tests verify orchestration, not Tiptap/ProseMirror internals.
+function scriptFixture({editable=true,destroyed=false,allowed=true}={}) {
+    const calls=[], transaction={kind:'scratch'};
+    const chain=(kind)=>{
+        const api={};
+        for(const name of ['unsetSubscript','unsetSuperscript','toggleSubscript','toggleSuperscript','focus'])api[name]=()=>{calls.push(kind+':'+name);return api;};
+        api.run=()=>{calls.push(kind+':run');return allowed;};return api;
+    };
+    const editor={isEditable:editable,isDestroyed:destroyed,state:{get tr(){calls.push('scratch:transaction');return transaction;}},chain(){calls.push('live:chain');return chain('live');}};
+    class CommandManager {
+        constructor(args){assert.equal(args.editor,editor);}
+        createChain(tr){assert.equal(tr,transaction);calls.push('scratch:chain');return chain('scratch');}
+    }
+    const source=actual.files[main].helpers.filter(h=>['scriptChain','canToggleScript','applyScript'].includes(h.name));
+    assert.equal(source.length,3);
+    const js=ts.transpileModule(source.map(h=>h.expression).join('\n'),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
+    const context=vm.createContext({CommandManager});vm.runInContext(js,context);
+    return {calls,editor,can:mark=>context.canToggleScript(editor,mark),apply:mark=>context.applyScript(editor,mark)};
+}
+test('script capability probe removes opposite first and does not use live chain or focus',()=>{
+    for(const [mark,unset,toggle] of [['subscript','unsetSuperscript','toggleSubscript'],['superscript','unsetSubscript','toggleSuperscript']]){
+        const f=scriptFixture();assert.equal(f.can(mark),true);
+        assert.deepEqual(f.calls,['scratch:transaction','scratch:chain','scratch:'+unset,'scratch:'+toggle,'scratch:run']);
+    }
+});
+test('script action repeats the checked sequence in one live chain',()=>{
+    for(const [mark,unset,toggle] of [['subscript','unsetSuperscript','toggleSubscript'],['superscript','unsetSubscript','toggleSuperscript']]){
+        const f=scriptFixture();assert.equal(f.apply(mark),true);
+        assert.deepEqual(f.calls,['scratch:transaction','scratch:chain','scratch:'+unset,'scratch:'+toggle,'scratch:run','live:chain','live:focus','live:'+unset,'live:'+toggle,'live:run']);
+    }
+});
+test('denied script capability never starts live chain',()=>{
+    const f=scriptFixture({allowed:false});assert.equal(f.apply('superscript'),false);assert.ok(!f.calls.some(c=>c.startsWith('live:')));
+});
+test('noneditable and destroyed editors do not probe or execute script actions',()=>{
+    for(const opts of [{editable:false},{destroyed:true}]){const f=scriptFixture(opts);assert.equal(f.can('subscript'),false);assert.equal(f.apply('superscript'),false);assert.deepEqual(f.calls,[]);}
 });

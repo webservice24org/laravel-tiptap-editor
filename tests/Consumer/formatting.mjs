@@ -151,10 +151,33 @@ export async function runFormatting(page, editor) {
         await button('Bold').click();await content('strong,b','','Marked plain');await state('Bold',false)
     })
     await check('subscript/superscript exclusion',async()=>{
-        await reset('<p>Format target</p>','Format target');await selectLine('Format target')
-        await button('Subscript').click();await content('sub','Format target','Format target')
+        await reset('<p><strong>Format target</strong></p>','Format target');await selectLine('Format target')
+        await button('Subscript').click();await content('sub','Format target','Format target');await state('Superscript',false)
         await button('Superscript').click();await content('sup','Format target','Format target');await content('sub','','Format target');await state('Subscript',false);await state('Superscript',true)
+        await content('strong,b','Format target','Format target')
+        assert.equal(await page.evaluate(()=>window.getSelection()?.toString()),'Format target')
         await button('Subscript').click();await content('sub','Format target','Format target');await content('sup','','Format target');await state('Superscript',false);await state('Subscript',true)
+        await content('strong,b','Format target','Format target')
+        await button('Subscript').click();await content('sub','','Format target');await state('Subscript',false)
+        await content('strong,b','Format target','Format target')
+
+        // Only the selected part changes; adjacent script text is preserved.
+        await reset('<p><sub>ABCDEF</sub></p>','ABCDEF');await selectFixtureRange(editor,2,4)
+        await state('Superscript',false);await button('Superscript').click()
+        await content('sub','ABEF','ABCDEF');await content('sup','CD','ABCDEF')
+        await state('Superscript',true);await state('Subscript',false)
+        assert.equal(await page.evaluate(()=>window.getSelection()?.toString()),'CD')
+
+        // A collapsed cursor changes stored marks without rewriting prior text.
+        await reset('<p><strong>Base</strong></p>','Base');await moveTo(4)
+        await state('Bold',true);await button('Subscript').click();await state('Subscript',true)
+        await page.keyboard.insertText('X');await content('sub','X','BaseX')
+        await state('Superscript',false);await button('Superscript').click();await state('Superscript',true);await state('Subscript',false)
+        await page.keyboard.insertText('Y');await content('sub','X','BaseXY');await content('sup','Y','BaseXY')
+        await state('Subscript',false);await button('Subscript').click();await state('Subscript',true);await state('Superscript',false)
+        await page.keyboard.insertText('Z');await content('sub','XZ','BaseXYZ');await content('sup','Y','BaseXYZ')
+        await content('strong,b','BaseXYZ','BaseXYZ');await button('Subscript').click();await state('Subscript',false)
+        await page.keyboard.insertText('!');await content('sub','XZ','BaseXYZ!');await content('sup','Y','BaseXYZ!')
     })
     await check('safe inline HTML round trip',async()=>{
         const html='<p><strong>A</strong><em>B</em><u>C</u><s>D</s><sub>E</sub><sup>F</sup></p>'
