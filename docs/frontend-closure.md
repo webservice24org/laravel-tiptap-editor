@@ -1,0 +1,11 @@
+# 11.2F.9 — Full frontend regression and closure
+
+This additive package changes no runtime, dependencies, existing tests or workflows. F8 remains the authoritative React evidence contract. Run all existing validators, typecheck, build, both packed consumers (119 each), audits and the existing manual QA checklists before acceptance. Run `node --test tools/frontend-closure.test.cjs` (8 synthetic contract tests); these tests are separate from the existing 56 consumer contracts.
+
+Commit the three F9 files and push. Require all workflows on this commit (9 PHP lanes, 6 Node lanes, 2 React lanes plus gates). Use **Re-run all jobs** if needed. The closure tool expects a clean checkout of the accepted main/master commit and the successful push or workflow_dispatch runs. It uses authenticated GitHub CLI (`gh auth status`) with read access, no publication or remote mutation. Use `gh api repos/OWNER/REPO/actions/workflows --jq ".workflows[] | [.name,.path]"` and `gh run list --commit FULL_SHA --repo OWNER/REPO` to find the PHP workflow filename and three run IDs. Confirm PHP lane names from the actual run: seven latest + two lowest; the verifier checks nine non-gate jobs and at least one gate, not exact PHP names because the prior PHP workflow is unavailable in the recovered baseline. If your PHP workflow uses other naming, stop and review rather than bypass validation.
+
+From the editor root, run (replace all placeholders):
+
+    node tools/frontend-closure.cjs OWNER/REPO PHP_RUN_ID NODE_RUN_ID REACT_RUN_ID .github/workflows/ACTUAL_PHP_FILENAME.yml C:\\xampp\\htdocs\\MicroWeb_Tiptap_F9_Acceptance.json
+
+The tool downloads the two exact current-attempt React artifacts and paired summary into a temporary directory, reuses the full F8 verifier, compares the hosted paired summary, and checks GitHub job conclusions and matching commits. It checks run attempts again before saving a new JSON file outside the repository. It refuses an existing output; choose a fresh filename. The status is `frontend-ci-evidence-verified`, not a cryptographic attestation or proof of manual QA. Inspect PHP job names and record local/manual acceptance separately. No npm publish, Composer release, tags, or MWT changes in F9.
