@@ -3,6 +3,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import http from 'node:http'
 import { chromium } from 'playwright'
+import evidence from './browser-evidence.cjs'
+const {EXPECTED,TOTAL,verifySuite,verifyBrowserEvidence}=evidence
 import { runFormatting } from './formatting.mjs'
 import { runBlocks } from './blocks.mjs'
 import { runLists } from './lists.mjs'
@@ -20,13 +22,26 @@ const server=http.createServer((req,res)=>{
     const type={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8'}[path.extname(file)] || 'application/octet-stream'
     res.writeHead(200,{'Content-Type':type});res.end(fs.readFileSync(file))
 })
-let browser
+let browser,page,stage='server'
+const errors=[], warnings=[], unexpected=[], completed={}, timingsMs={}
+const started=performance.now()
+const write=(file,value)=>fs.writeFileSync(file,JSON.stringify(value,null,2)+'\n',{flag:'wx'})
+async function suite(name,execute){
+    stage=name;const start=performance.now()
+    console.log('Browser suite started: '+name)
+    const result=await execute()
+    verifySuite(name,result)
+    completed[name]=result;timingsMs[name]=Math.round(performance.now()-start)
+    console.log('Browser suite passed: '+name+' ('+result.checks.length+' groups)')
+    return result
+}
 try {
     await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve)})
     const origin=`http://127.0.0.1:${server.address().port}`
+    stage='launch'
     browser=await chromium.launch({headless:true})
-    const page=await browser.newPage()
-    const errors=[], warnings=[], unexpected=[]
+    page=await browser.newPage()
+    stage='smoke';const smokeStart=performance.now()
     page.on('pageerror',e=>errors.push(e.message))
     page.on('console',m=>{if(m.type()==='error')errors.push(m.text());if(m.type()==='warning')warnings.push(m.text())})
     page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`)})
@@ -45,15 +60,28 @@ try {
     await page.locator('#hide').click();await editor.waitFor({state:'detached'})
     await page.locator('#show-default').click();await editor.waitFor({state:'visible'})
     assert.equal(await editor.innerText(),'Consumer smoke edited')
-    const formatting=await runFormatting(page,editor)
-    const blocks=await runBlocks(page,editor)
-    const lists=await runLists(page,editor)
-    const linksTypography=await runLinksTypography(page,editor)
-    const history=await runHistory(page,editor)
-    const synchronization=await runSynchronization(page)
+    completed.smoke={status:'pending-final-check',checks:EXPECTED.smoke.slice(0,-1)};timingsMs.smoke=Math.round(performance.now()-smokeStart)
+    const formatting=await suite('formatting',()=>runFormatting(page,editor))
+    const blocks=await suite('blocks',()=>runBlocks(page,editor))
+    const lists=await suite('lists',()=>runLists(page,editor))
+    const linksTypography=await suite('linksTypography',()=>runLinksTypography(page,editor))
+    const history=await suite('history',()=>runHistory(page,editor))
+    const synchronization=await suite('synchronization',()=>runSynchronization(page))
+    stage='final-evidence'
     assert.deepEqual(errors,[],'Browser errors');assert.deepEqual(unexpected,[],'Unexpected network requests')
-    fs.writeFileSync(report,JSON.stringify({status:'passed',react:expected,chromium:browser.version(),checks:['named mount','React version','CSS applied','minHeight','edit callback','unmount','default remount','sanitizer and extension factory','no page errors or remote requests'],formatting,blocks,lists,linksTypography,history,synchronization,warnings},null,2)+'\n',{flag:'wx'})
+    completed.smoke={status:'passed',checks:[...EXPECTED.smoke]}
+    const summary={schema:1,status:'passed',react:expected,chromium:browser.version(),checks:completed.smoke.checks,formatting,blocks,lists,linksTypography,history,synchronization,warnings,errors,unexpected,totalChecks:TOTAL,timingsMs}
+    verifyBrowserEvidence(summary,expected)
+    write(report,summary)
     console.log('Browser consumer smoke passed: React '+expected)
+} catch(error) {
+    // Only synthetic consumer fixtures are captured. Do not let diagnostic failure mask the original error.
+    const diagnostic={schema:1,status:'failed',react:expected,stage,completed,timingsMs,elapsedMs:Math.round(performance.now()-started),error:String(error.stack||error).slice(0,16000),warnings,errors,unexpected,chromium:browser?.version()??null}
+    if(page&&!page.isClosed()){
+        try{await page.screenshot({path:path.join(path.dirname(report),'browser-failure.png'),timeout:5000});diagnostic.screenshot='browser-failure.png'}catch(e){diagnostic.screenshotError=String(e.message||e).slice(0,1000)}
+    }
+    try{write(path.join(path.dirname(report),'browser-failure.json'),diagnostic)}catch(e){console.error('Failure evidence write failed: '+e.message)}
+    throw error
 } finally {
     try {if(browser)await browser.close()} finally {await new Promise(resolve=>server.close(resolve))}
 }
