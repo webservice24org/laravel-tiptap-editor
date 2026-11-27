@@ -116,6 +116,13 @@ export function normalizeLinkUrl(value: string, allowBareHost = false): string {
     }
 }
 
+// Match the server image URL boundary: explicit HTTP(S) or root-relative.
+// Blob URLs are used only for local file previews and never stored.
+export function normalizeImageSource(value: string): string {
+    const url = normalizeLinkUrl(value)
+    return url.startsWith('#') ? '' : url
+}
+
 // Fixed presets avoid arbitrary CSS and remote font loading.
 export const TEXT_PRESETS = {
     color: ['black', 'red', 'blue', 'green', 'purple'],
@@ -347,11 +354,9 @@ DOMPurify.addHook(
                 return
             }
 
-            const safe =
-                safeUrl(
-                    value,
-                    true
-                )
+            const safe = element.tagName.toLowerCase() === 'img'
+                ? normalizeImageSource(value)
+                : safeUrl(value, true)
 
             if (!safe) {
                 data.keepAttr = false

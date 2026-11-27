@@ -13,6 +13,7 @@ import type {
 } from '@tiptap/react'
 
 import Dialog from './Dialog'
+import { normalizeImageSource } from '../../utils/sanitizeHtml'
 
 import {
     useImageUpload,
@@ -163,7 +164,7 @@ export default function ImageDialog({
 
         if (!file) {
             setPreview(
-                value.trim()
+                normalizeImageSource(value)
             )
         }
 
@@ -209,9 +210,10 @@ export default function ImageDialog({
             |--------------------------------------------------------------------------
             */
 
+            src = normalizeImageSource(src)
             if (!src) {
                 setError(
-                    'Please upload an image or enter an image URL.'
+                    'Please upload an image or enter a valid image URL.'
                 )
 
                 return

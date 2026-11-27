@@ -177,6 +177,28 @@ final class EditorSecurityJourneyTest extends TestCase
         self::assertCount(2, $this->media()->extractManagedPaths($final));
     }
 
+    public function test_replacement_and_removal_keep_permanent_media_and_cleanup_abandoned_uploads(): void
+    {
+        $original = $this->upload();
+        $final = $this->clean($this->media()->finalize($this->clean($this->figure($original)), self::DESTINATION));
+        [$oldPath] = $this->media()->extractManagedPaths($final);
+        $abandoned = $this->upload();
+        $replacement = $this->upload(true);
+        $replacementHtml = $this->clean($this->media()->finalize($this->clean($this->figure($replacement, 'Replacement')), self::DESTINATION));
+        [$newPath] = $this->media()->extractManagedPaths($replacementHtml);
+        self::assertNotSame($oldPath, $newPath);
+        self::assertStringContainsString('Replacement', $replacementHtml);
+        self::assertStringNotContainsString($oldPath, $replacementHtml);
+        self::assertSame([], $this->media()->extractManagedPaths($this->media()->finalize('<p>Removed image</p>', self::DESTINATION)));
+        $this->age($oldPath);
+        $this->age($newPath);
+        $this->age($abandoned['path']);
+        self::assertSame(1, $this->media()->cleanupTemporaryMedia(24));
+        $this->disk()->assertMissing([$original['path'], $replacement['path'], $abandoned['path']]);
+        self::assertSame($this->png(), $this->disk()->get($oldPath));
+        self::assertSame($this->png(true), $this->disk()->get($newPath));
+    }
+
     public function test_cleanup_command_preserves_finalized_and_fresh_media_bytes(): void
     {
         $saved = $this->upload();

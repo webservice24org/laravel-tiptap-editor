@@ -9,17 +9,30 @@ if (clean !== '<p>Safe <strong>text</strong></p>') throw new Error('Unexpected s
 const extensions = createEditorExtensions()
 if (!Array.isArray(extensions) || extensions.length < 5) throw new Error('Extension factory failed')
 
+const uploadFixture = async (file: File) => {
+    if (file.name === 'reject.png') throw new Error('Host rejected fixture')
+    if (file.name === 'invalid.png') return {url: 'javascript:alert(1)'}
+    return {url: '/__media/custom.png'}
+}
+
 function App() {
     const [value, setValue] = useState('<p>Consumer smoke</p>')
     const [changes, setChanges] = useState(0)
     const [fixtureHtml, setFixtureHtml] = useState('<p>Format target</p>')
     const [generation, setGeneration] = useState(0)
+    const [uploadMode, setUploadMode] = useState('default')
     const [mode, setMode] = useState<'named'|'default'|'hidden'>('named')
     const [secondaryOpen, setSecondaryOpen] = useState(false)
     const [secondaryValue, setSecondaryValue] = useState('<p>Other editor</p>')
     const [secondaryChanges, setSecondaryChanges] = useState(0)
-    const props: TiptapEditorProps = {value, minHeight: 240, onChange: html => {setValue(html);setChanges(c=>c+1)}}
+    const props: TiptapEditorProps = {value, minHeight: 240, onChange: html => {setValue(html);setChanges(c=>c+1)},
+        imageUploadUrl: uploadMode==='alternate' ? '/__media/upload' : uploadMode==='invalid' ? '/__media/invalid' : uploadMode==='reject' ? '/__media/reject' : uploadMode==='cross' ? 'https://example.invalid/upload' : undefined,
+        onImageUpload: uploadMode==='callback' ? uploadFixture : undefined}
     return <main>
+        <label htmlFor="upload-mode">Image upload fixture</label>
+        <select id="upload-mode" value={uploadMode} onChange={event=>setUploadMode(event.target.value)}>
+            {['default','alternate','invalid','reject','cross','callback'].map(mode=><option key={mode} value={mode}>{mode}</option>)}
+        </select>
         <div id="react-version">{React.version}</div>
         <button id="host-replace" onClick={()=>setValue('<p>Host replaced</p>')}>Replace host value</button>
         <button id="hide" onClick={()=>setMode('hidden')}>Unmount editor</button>

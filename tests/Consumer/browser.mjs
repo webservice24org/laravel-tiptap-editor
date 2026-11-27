@@ -11,12 +11,15 @@ import { runLists } from './lists.mjs'
 import { runLinksTypography } from './links-typography.mjs'
 import { runHistory } from './history.mjs'
 import { runSynchronization } from './synchronization.mjs'
+import { runMedia, serveMedia } from './media.mjs'
 const [expected,report] = process.argv.slice(2)
 assert.match(expected,/^(18|19)\.\d+\.\d+$/)
 assert.ok(report)
 const root=path.resolve('dist'), files=fs.readdirSync(path.join(root,'assets'))
 const allowed=new Map([['/',path.join(root,'index.html')],...files.map(n=>['/assets/'+n,path.join(root,'assets',n)])])
+const mediaRequests=[]
 const server=http.createServer((req,res)=>{
+    if(serveMedia(req,res,mediaRequests))return
     const file=allowed.get(req.url)
     if(!file){res.writeHead(404).end();return}
     const type={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8'}[path.extname(file)] || 'application/octet-stream'
@@ -43,8 +46,12 @@ try {
     page=await browser.newPage()
     stage='smoke';const smokeStart=performance.now()
     page.on('pageerror',e=>errors.push(e.message))
-    page.on('console',m=>{if(m.type()==='error')errors.push(m.text());if(m.type()==='warning')warnings.push(m.text())})
-    page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`)})
+    page.on('console',m=>{
+        // The one intentional 422 fixture is asserted in the media suite.
+        const expected422=m.location().url===origin+'/__media/reject' && /Failed to load resource: the server responded with a status of 422/.test(m.text())
+        if(m.type()==='error'&&!expected422)errors.push(m.text());if(m.type()==='warning')warnings.push(m.text())
+    })
+    page.on('response',r=>{if(r.status()>=400&&!(r.status()===422&&r.url()===origin+'/__media/reject'))errors.push(`${r.status()} ${r.url()}`)})
     await page.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){unexpected.push(route.request().url());return route.abort()}return route.continue()})
     await page.goto(origin,{waitUntil:'load'})
     const editor=page.locator('.mw-tiptap-content[contenteditable="true"]')
@@ -67,10 +74,11 @@ try {
     const linksTypography=await suite('linksTypography',()=>runLinksTypography(page,editor))
     const history=await suite('history',()=>runHistory(page,editor))
     const synchronization=await suite('synchronization',()=>runSynchronization(page))
+    const media=await suite('media',()=>runMedia(page,origin,mediaRequests))
     stage='final-evidence'
     assert.deepEqual(errors,[],'Browser errors');assert.deepEqual(unexpected,[],'Unexpected network requests')
     completed.smoke={status:'passed',checks:[...EXPECTED.smoke]}
-    const summary={schema:1,status:'passed',react:expected,chromium:browser.version(),checks:completed.smoke.checks,formatting,blocks,lists,linksTypography,history,synchronization,warnings,errors,unexpected,totalChecks:TOTAL,timingsMs}
+    const summary={schema:1,status:'passed',react:expected,chromium:browser.version(),checks:completed.smoke.checks,formatting,blocks,lists,linksTypography,history,synchronization,media,warnings,errors,unexpected,totalChecks:TOTAL,timingsMs}
     verifyBrowserEvidence(summary,expected)
     write(report,summary)
     console.log('Browser consumer smoke passed: React '+expected)
