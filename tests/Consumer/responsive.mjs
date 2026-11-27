@@ -35,9 +35,21 @@ export async function runResponsive(page) {
         })
         await check('wide table stays locally scrollable',async()=>{
             await reset('<p>Wide table</p><table><tbody><tr>'+Array.from({length:8},(_,i)=>'<td><p>Cell '+i+'</p></td>').join('')+'</tr></tbody></table>')
-            const wrapper=live.locator('.tableWrapper');await wrapper.waitFor();assert.equal(await live.locator('td').count(),8);await contains(wrapper)
-            assert.ok(await wrapper.evaluate(e=>e.scrollWidth>e.clientWidth),'Wide table has no local overflow')
-            await wrapper.evaluate(e=>{e.scrollLeft=e.scrollWidth});assert.ok(await wrapper.evaluate(e=>e.scrollLeft>0));await inside(root)
+            const wrapper=live.locator('.tableWrapper');await wrapper.waitFor();assert.equal(await live.locator('td').count(),8)
+            for (const width of [320,390]) {
+                await page.setViewportSize({width,height:640});await contains(wrapper)
+                const metrics=await wrapper.evaluate(e=>{
+                    const table=e.querySelector('table');const style=getComputedStyle(table)
+                    return {viewport:innerWidth,pageWidth:document.documentElement.scrollWidth,clientWidth:e.clientWidth,scrollWidth:e.scrollWidth,overflowX:getComputedStyle(e).overflowX,tableWidth:table.getBoundingClientRect().width,tableMinWidth:style.minWidth,tableMaxWidth:style.maxWidth,tableInlineStyle:table.getAttribute('style')}
+                })
+                assert.equal(metrics.viewport,width)
+                assert.ok(metrics.scrollWidth>metrics.clientWidth,'Wide table has no local overflow: '+JSON.stringify(metrics))
+                assert.ok(['auto','scroll'].includes(metrics.overflowX),'Table wrapper is not scrollable: '+JSON.stringify(metrics))
+                await wrapper.evaluate(e=>{e.scrollLeft=0;e.scrollLeft=e.scrollWidth})
+                assert.ok(await wrapper.evaluate(e=>e.scrollLeft>0),'Table did not scroll: '+JSON.stringify(metrics))
+                assert.ok(metrics.pageWidth<=width+1,'Page-level table overflow: '+JSON.stringify(metrics));await inside(root)
+            }
+            await page.setViewportSize({width:320,height:640})
         })
         await check('responsive rich media and Bengali content',async()=>{
             const text='বাংলা সংবাদ '+ 'দীর্ঘলেখা'.repeat(30)

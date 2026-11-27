@@ -3153,3 +3153,13 @@ figure[data-mw-video][data-wrap="true"] > .mw-tiptap-video-frame {
     .mw-tiptap-editor .mw-tiptap-toolbar,
     .mw-tiptap-editor .mw-table-toolbar { scroll-padding-inline: 8px; }
 }
+
+/* F.7 repair: TableView writes inline min-width for resizable columns.
+ * A mobile width floor must use width, not compete with that inline minimum.
+ * Preserve explicit pixel widths and calculated column minima. */
+@media (max-width: 650px) {
+    .mw-tiptap-content .tableWrapper > table {
+        width: max(100%, 600px);
+        max-width: none;
+    }
+}
