@@ -6,6 +6,7 @@ import {
 
 import type {
     ChangeEvent,
+    ReactNode,
     KeyboardEvent,
     UIEvent,
 } from 'react'
@@ -357,116 +358,51 @@ export const formatHtml = (
     return lines.join('\n')
 }
 
-const escapeHtml = (
-    value: string
-) =>
-    value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-
-const highlightTag = (
-    tag: string
-) => {
-    const escaped =
-        escapeHtml(tag)
-
-    return escaped.replace(
-        /(&lt;\/?)([A-Za-z][\w:-]*)([\s\S]*?)(\/?&gt;)/g,
-        (
-            _match,
-            opening,
-            name,
-            middle,
-            closing
-        ) => {
-            const attributes =
-                String(middle).replace(
-                    /([\w:-]+)(\s*=\s*)(&quot;.*?&quot;|&#39;.*?&#39;|"[^"]*"|'[^']*')/g,
-                    (
-                        _attribute,
-                        attrName,
-                        equals,
-                        attrValue
-                    ) =>
-                        `<span class="mw-code-attribute">${attrName}</span>${equals}<span class="mw-code-string">${attrValue}</span>`
-                )
-
-            return (
-                `<span class="mw-code-punctuation">${opening}</span>` +
-                `<span class="mw-code-tag">${name}</span>` +
-                attributes +
-                `<span class="mw-code-punctuation">${closing}</span>`
-            )
-        }
-    )
+// Source is intentionally unsanitized while editing. Render every token as a
+// React text child, not as HTML. Only these fixed highlight spans are created.
+const highlightTag = (tag: string): ReactNode => {
+    const match = /^(<\/?)([A-Za-z][\w:-]*)([\s\S]*?)(\/?>)$/.exec(tag)
+    if (!match) return tag
+    const [, opening, name, middle, closing] = match
+    const parts: ReactNode[] = []
+    const attribute = /([\w:-]+)(\s*=\s*)("[^"]*"|'[^']*')/g
+    let offset = 0
+    for (const item of middle.matchAll(attribute)) {
+        const index = item.index ?? 0
+        parts.push(middle.slice(offset, index))
+        parts.push(<span key={`attribute-${index}`} className="mw-code-attribute">{item[1]}</span>)
+        parts.push(item[2])
+        parts.push(<span key={`string-${index}`} className="mw-code-string">{item[3]}</span>)
+        offset = index + item[0].length
+    }
+    parts.push(middle.slice(offset))
+    return <>
+        <span className="mw-code-punctuation">{opening}</span>
+        <span className="mw-code-tag">{name}</span>
+        {parts}
+        <span className="mw-code-punctuation">{closing}</span>
+    </>
 }
 
-const highlightHtml = (
-    value: string
-) => {
-    const pattern =
-        /<!--[\s\S]*?-->|<!DOCTYPE[\s\S]*?>|<\/?[A-Za-z][^>]*>/gi
-
-    let output = ''
+const highlightHtml = (value: string): ReactNode[] => {
+    const pattern = /<!--[\s\S]*?-->|<!DOCTYPE[\s\S]*?>|<\/?[A-Za-z][^>]*>/gi
+    const output: ReactNode[] = []
     let lastIndex = 0
-
-    for (
-        const match
-        of value.matchAll(pattern)
-    ) {
-        const index =
-            match.index ?? 0
-
-        output +=
-            `<span class="mw-code-text">${escapeHtml(
-                value.slice(
-                    lastIndex,
-                    index
-                )
-            )}</span>`
-
-        const token =
-            match[0]
-
-        if (
-            token.startsWith(
-                '<!--'
-            )
-        ) {
-            output +=
-                `<span class="mw-code-comment">${escapeHtml(
-                    token
-                )}</span>`
-        } else if (
-            /^<!DOCTYPE/i.test(
-                token
-            )
-        ) {
-            output +=
-                `<span class="mw-code-doctype">${escapeHtml(
-                    token
-                )}</span>`
+    for (const match of value.matchAll(pattern)) {
+        const index = match.index ?? 0
+        const token = match[0]
+        output.push(<span key={`text-${index}`} className="mw-code-text">{value.slice(lastIndex, index)}</span>)
+        if (token.startsWith('<!--')) {
+            output.push(<span key={`tag-${index}`} className="mw-code-comment">{token}</span>)
+        } else if (/^<!DOCTYPE/i.test(token)) {
+            output.push(<span key={`tag-${index}`} className="mw-code-doctype">{token}</span>)
         } else {
-            output +=
-                highlightTag(
-                    token
-                )
+            output.push(<span key={`tag-${index}`}>{highlightTag(token)}</span>)
         }
-
-        lastIndex =
-            index +
-            token.length
+        lastIndex = index + token.length
     }
-
-    output +=
-        `<span class="mw-code-text">${escapeHtml(
-            value.slice(
-                lastIndex
-            )
-        )}</span>`
-
-    return output || ' '
+    output.push(<span key="tail" className="mw-code-text">{value.slice(lastIndex)}</span>)
+    return output
 }
 
 export default function CodeEditor({
@@ -652,11 +588,7 @@ export default function CodeEditor({
                     }
                     className="mw-code-editor-highlight"
                     aria-hidden="true"
-                    dangerouslySetInnerHTML={{
-                        __html:
-                            highlighted,
-                    }}
-                />
+                >{highlighted}</pre>
 
                 <textarea
                     ref={

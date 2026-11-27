@@ -1,6 +1,7 @@
 import {
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from 'react'
 
@@ -70,6 +71,9 @@ export default function TiptapEditor({
             )
         )
 
+    // A changed controlled value is authoritative, even while source is open.
+    const observedValue = useRef(value)
+
     const extensions =
         useMemo(
             () =>
@@ -133,11 +137,17 @@ export default function TiptapEditor({
         })
 
     useEffect(() => {
-        if (
-            !editor ||
-            mode ===
-                'code'
-        ) {
+        const valueChanged = observedValue.current !== value
+        observedValue.current = value
+
+        if (mode === 'code') {
+            if (valueChanged) {
+                setSourceHtml(sanitizeEditorHtml(value))
+            }
+            return
+        }
+
+        if (!editor) {
             return
         }
 

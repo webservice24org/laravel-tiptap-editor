@@ -13,6 +13,7 @@ import { runHistory } from './history.mjs'
 import { runSynchronization } from './synchronization.mjs'
 import { runMedia, serveMedia } from './media.mjs'
 import { runRichBlocks, isFixtureVideoRequest } from './rich-blocks.mjs'
+import { runSourceSecurity } from './source-security.mjs'
 const [expected,report] = process.argv.slice(2)
 assert.match(expected,/^(18|19)\.\d+\.\d+$/)
 assert.ok(report)
@@ -77,10 +78,11 @@ try {
     const synchronization=await suite('synchronization',()=>runSynchronization(page))
     const media=await suite('media',()=>runMedia(page,origin,mediaRequests))
     const richBlocks=await suite('richBlocks',()=>runRichBlocks(page))
+    const sourceSecurity=await suite('sourceSecurity',()=>runSourceSecurity(page))
     stage='final-evidence'
     assert.deepEqual(errors,[],'Browser errors');assert.deepEqual(unexpected,[],'Unexpected network requests')
     completed.smoke={status:'passed',checks:[...EXPECTED.smoke]}
-    const summary={schema:1,status:'passed',react:expected,chromium:browser.version(),checks:completed.smoke.checks,formatting,blocks,lists,linksTypography,history,synchronization,media,richBlocks,warnings,errors,unexpected,totalChecks:TOTAL,timingsMs}
+    const summary={schema:1,status:'passed',react:expected,chromium:browser.version(),checks:completed.smoke.checks,formatting,blocks,lists,linksTypography,history,synchronization,media,richBlocks,sourceSecurity,warnings,errors,unexpected,totalChecks:TOTAL,timingsMs}
     verifyBrowserEvidence(summary,expected)
     write(report,summary)
     console.log('Browser consumer smoke passed: React '+expected)
