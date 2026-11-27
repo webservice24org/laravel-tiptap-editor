@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const NAME = '@microweb/laravel-tiptap-editor';
+const NAME = '@webservice24org/laravel-tiptap-editor';
 const sha = b => crypto.createHash('sha256').update(b).digest('hex');
 const readJson = p => JSON.parse(fs.readFileSync(p, 'utf8'));
 const laneVersions = {
@@ -52,7 +52,7 @@ function inventory(root, relative='') {
 }
 function packInventory(pack, distFiles) {
     assert.ok(Array.isArray(pack)&&pack.length===1,'Expected one packed archive');
-    const p=pack[0];assert.equal(p.name,NAME);assert.match(p.filename,/^microweb-laravel-tiptap-editor-[0-9]+\.[0-9]+\.[0-9]+\.tgz$/);
+    const p=pack[0];assert.equal(p.name,NAME);assert.match(p.filename,/^webservice24org-laravel-tiptap-editor-[0-9]+\.[0-9]+\.[0-9]+\.tgz$/);
     const expected=['LICENSE','README.md','package.json',...distFiles.map(n=>'dist/'+n)].sort();
     assert.deepEqual(p.files.map(f=>f.path).sort(),expected,'Unexpected pack inventory');return p.filename;
 }

@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import DefaultEditor, { TiptapEditor, sanitizeEditorHtml, createEditorExtensions, type TiptapEditorProps } from '@microweb/laravel-tiptap-editor'
-import '@microweb/laravel-tiptap-editor/editor.css'
+import DefaultEditor, { TiptapEditor, sanitizeEditorHtml, createEditorExtensions, type TiptapEditorProps } from '@webservice24org/laravel-tiptap-editor'
+import '@webservice24org/laravel-tiptap-editor/editor.css'
 
 if (DefaultEditor !== TiptapEditor) throw new Error('Default and named exports differ')
 const clean = sanitizeEditorHtml('<p>Safe <strong>text</strong></p><script>bad()</script>')

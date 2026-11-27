@@ -5,7 +5,7 @@ Reusable Tiptap rich-text editor for Laravel 12 or 13 + React + TypeScript appli
 The package has two parts:
 
 - `microweb/laravel-tiptap-editor` — Laravel backend integration, media lifecycle and server-side HTML sanitization.
-- `@microweb/laravel-tiptap-editor` — React/TypeScript editor UI and browser-side HTML sanitization.
+- `@webservice24org/laravel-tiptap-editor` — React/TypeScript editor UI and browser-side HTML sanitization.
 
 ## Requirements
 
@@ -26,7 +26,7 @@ composer require microweb/laravel-tiptap-editor
 Install the frontend package:
 
 ```bash
-npm install @microweb/laravel-tiptap-editor
+npm install @webservice24org/laravel-tiptap-editor
 ```
 
 Publish the package configuration:
@@ -48,9 +48,9 @@ import { useState } from 'react'
 
 import {
     TiptapEditor,
-} from '@microweb/laravel-tiptap-editor'
+} from '@webservice24org/laravel-tiptap-editor'
 
-import '@microweb/laravel-tiptap-editor/editor.css'
+import '@webservice24org/laravel-tiptap-editor/editor.css'
 
 export default function EditorExample() {
     const [content, setContent] =
@@ -299,7 +299,7 @@ import {
     TiptapEditor,
     sanitizeEditorHtml,
     createEditorExtensions,
-} from '@microweb/laravel-tiptap-editor'
+} from '@webservice24org/laravel-tiptap-editor'
 ```
 
 Public TypeScript types include:

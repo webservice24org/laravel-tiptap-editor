@@ -1,5 +1,5 @@
 {
-    "name": "@microweb/laravel-tiptap-editor",
+    "name": "@webservice24org/laravel-tiptap-editor",
     "version": "1.0.0",
     "description": "Reusable Tiptap rich text editor for Laravel and React applications.",
     "license": "MIT",

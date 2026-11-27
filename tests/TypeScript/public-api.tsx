@@ -5,7 +5,7 @@ import DefaultEditor, {
     type NewsBlockStyle, type NewsSearchHandler, type NewsSearchResult,
     type ImageAlignment, type ImageFigureOptions, type InsertNewsBlockOptions,
     type VideoAlignment, type VideoProvider,
-} from '@microweb/laravel-tiptap-editor'
+} from '@webservice24org/laravel-tiptap-editor'
 import type { Editor, Extensions } from '@tiptap/core'
 
 type IsAny<T> = 0 extends (1 & T) ? true : false

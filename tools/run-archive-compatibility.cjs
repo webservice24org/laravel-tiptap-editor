@@ -28,8 +28,8 @@ function main(){
     if(mode==='verify'){
         const report=fs.realpathSync(arg);outside(report);
         const pack=readJson(path.join(report,'pack.json'));
-        const filename='microweb-laravel-tiptap-editor-'+JSON.parse(expected.get('package.json')).version+'.tgz';
-        assert.match(filename,/^microweb-laravel-tiptap-editor-\d+\.\d+\.\d+\.tgz$/);
+        const filename='webservice24org-laravel-tiptap-editor-'+JSON.parse(expected.get('package.json')).version+'.tgz';
+        assert.match(filename,/^webservice24org-laravel-tiptap-editor-\d+\.\d+\.\d+\.tgz$/);
         const bytes=readBounded(path.join(report,filename));
         const actual=verifyArchive(bytes,expected,pack);
         assert.deepEqual(verifyArchive(bytes,expected,readJson(path.join(report,'repeat-pack.json'))),actual,'Repeat pack metadata mismatch');
@@ -43,7 +43,7 @@ function main(){
     const repeat=path.join(report,'repeat');fs.mkdirSync(repeat);
     console.log('Archive evidence directory: '+report);
     try{
-        function packOnce(dest){const p=JSON.parse(run(['pack','--ignore-scripts','--dry-run=false','--json','--pack-destination',dest],true));const filename='microweb-laravel-tiptap-editor-'+JSON.parse(expected.get('package.json')).version+'.tgz';assert.match(filename,/^microweb-laravel-tiptap-editor-\d+\.\d+\.\d+\.tgz$/);const bytes=readBounded(path.join(dest,filename));return {p,bytes,result:verifyArchive(bytes,expected,p)};}
+        function packOnce(dest){const p=JSON.parse(run(['pack','--ignore-scripts','--dry-run=false','--json','--pack-destination',dest],true));const filename='webservice24org-laravel-tiptap-editor-'+JSON.parse(expected.get('package.json')).version+'.tgz';assert.match(filename,/^webservice24org-laravel-tiptap-editor-\d+\.\d+\.\d+\.tgz$/);const bytes=readBounded(path.join(dest,filename));return {p,bytes,result:verifyArchive(bytes,expected,p)};}
         const first=packOnce(report);writeJson(path.join(report,'pack.json'),first.p);
         const second=packOnce(repeat);writeJson(path.join(report,'repeat-pack.json'),second.p);
         assert.ok(first.bytes.equals(second.bytes),'Repeat npm pack bytes differ in same environment');

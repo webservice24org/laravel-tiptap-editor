@@ -10,7 +10,7 @@ function copyArchiveEvidence(source,destination){
     const summary=JSON.parse(readRegular(path.join(src,metadata[0])));
     assert.equal(summary.status,'passed');assert.equal(summary.repeat_pack_identical,true);
     const archive=summary.archive;
-    assert.match(archive.filename,/^microweb-laravel-tiptap-editor-\d+\.\d+\.\d+\.tgz$/);
+    assert.match(archive.filename,/^webservice24org-laravel-tiptap-editor-\d+\.\d+\.\d+\.tgz$/);
     assert.equal(archive.entries,42);assert.equal(archive.dist_files,39);
     const names=[...metadata,archive.filename].sort();
     assert.deepEqual(fs.readdirSync(src).sort(),names,'Unexpected or missing archive evidence files');

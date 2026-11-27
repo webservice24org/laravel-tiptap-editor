@@ -79,7 +79,7 @@ function verifyArchive(bytes, expected, pack) {
     assert.deepEqual(manifest.exports,{'.':{types:manifest.types,import:manifest.main},'./editor.css':'./dist/editor.css'});
     assert.deepEqual(manifest.files,['dist','README.md','LICENSE']);
     const filename=packInventory(pack,[...expected.keys()].filter(n=>n.startsWith('dist/')).map(n=>n.slice(5)));
-    assert.equal(filename,'microweb-laravel-tiptap-editor-'+manifest.version+'.tgz');
+    assert.equal(filename,'webservice24org-laravel-tiptap-editor-'+manifest.version+'.tgz');
     const p=pack[0], integrity='sha512-'+hash(bytes,'sha512','base64');
     assert.equal(p.id,NAME+'@'+manifest.version);assert.equal(p.version,manifest.version);
     assert.equal(p.size,bytes.length);assert.equal(p.unpackedSize,entries.reduce((s,e)=>s+e.bytes,0));
