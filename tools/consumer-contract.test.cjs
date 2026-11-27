@@ -43,3 +43,31 @@ test('allow recorded nonblocking warnings only',()=>{const r=browserFixture();r.
 test('reject wrong count or incomplete or invalid timings',()=>{for(const mutate of [r=>r.totalChecks=84,r=>delete r.timingsMs.smoke,r=>r.timingsMs.history=-1,r=>r.timingsMs.history=Infinity]){const r=browserFixture();mutate(r);assert.throws(()=>verifyBrowserEvidence(r,r.react));}});
 test('reject unrecognized browser suite',()=>assert.throws(()=>verifySuite('extra',{status:'passed',checks:[]}),/Unknown/));
 test('classify browser provisioning separately from execution and evidence',()=>{assert.equal(stageCategory('chromium-dependencies'),'browser-provisioning');assert.equal(stageCategory('chromium-install'),'browser-provisioning');assert.equal(stageCategory('browser'),'browser-execution');assert.equal(stageCategory('browser-evidence'),'evidence-validation');assert.equal(stageCategory('consumer-build'),'consumer-preflight-or-build');});
+
+// F3I offline closure contract: synthetic records, never real CI acceptance evidence.
+const {COMMANDS,DIST_NAMES:closureDistNames,verifyPair,load:loadClosure}=require('./formatting-closure.cjs');
+const closureCommit='a'.repeat(40);
+const closureHash=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
+const closureBaseline={manifest,lock,hashes:{'package.json':'1'.repeat(64),'package-lock.json':'2'.repeat(64)}};
+function closureFixture(lane){
+    const {p,l}=fixture(lane), browser=browserFixture();browser.react=p.expected.react;
+    const lockBytes=Buffer.from(JSON.stringify(l));
+    const names=closureDistNames;
+    const dist_hashes=Object.fromEntries(names.map(n=>[n,closureHash(n)]));
+    const audit={auditReportVersion:2,vulnerabilities:{},metadata:{vulnerabilities:{info:0,low:0,moderate:0,high:0,critical:0,total:0}}};
+    return {summary:{status:'passed',lane,commit:closureCommit,platform:'linux',major:24,node:'24.22.3',npm:'11.19.1',editor:structuredClone(closureBaseline.hashes),browser:structuredClone(browser),audits:'clean',consumer_lock_sha256:closureHash(lockBytes),singleton:p.expected,archive_sha256:closureHash(archive),dist_hashes},browser,run:{schema:1,status:'passed',stage:'complete',lane,commit:closureCommit,completedCommands:[...COMMANDS],browserChecks:85,elapsedMs:100},lockBytes,manifest:p.manifest,pack:[{name:NAME,version:manifest.version,filename:'microweb-laravel-tiptap-editor-'+manifest.version+'.tgz',integrity:digest,entryCount:42,files:['LICENSE','README.md','package.json',...names.map(n=>'dist/'+n)].map(path=>({path}))}],audits:[structuredClone(audit),structuredClone(audit)],tree:{}};
+}
+const closePair=(mutate=()=>{})=>{const a=closureFixture('18'),b=closureFixture('19');mutate(a,b);return verifyPair(a,b,closureCommit,closureBaseline);};
+test('closure accepts two same-commit complete consumer reports',()=>{const result=closePair();assert.equal(result.status,'react-evidence-consistent');assert.equal(result.browserChecks,170);assert.equal(result.distributionFiles,39);});
+test('closure rejects stale or mixed commits',()=>{assert.throws(()=>closePair((a,b)=>b.summary.commit='b'.repeat(40)),/Consumer commit/);assert.throws(()=>closePair(a=>a.run.commit='b'.repeat(40)),/Run status commit/);});
+test('closure rejects swapped React lanes',()=>assert.throws(()=>closePair(a=>a.summary.lane='19')));
+test('closure rejects unsuccessful or incomplete command ledger',()=>{assert.throws(()=>closePair(a=>a.run.status='failed'));assert.throws(()=>closePair(a=>a.run.completedCommands.pop()),/ledger/);});
+test('closure rejects inconsistent browser summaries and missing checks',()=>{assert.throws(()=>closePair(a=>a.browser.totalChecks=84),/summaries/);assert.throws(()=>closePair(a=>{a.browser.history.checks.pop();a.summary.browser=structuredClone(a.browser);}),/history/);});
+test('closure rejects baseline drift',()=>assert.throws(()=>closePair(a=>a.summary.editor['package.json']='0'.repeat(64)),/manifest\/lock/));
+test('closure rejects changed lock bytes and dependency version drift',()=>{assert.throws(()=>closePair(a=>a.lockBytes=Buffer.from('{}')),/checksum/);assert.throws(()=>closePair(a=>a.summary.singleton.react='0.0.0'),/singleton/);});
+test('closure rejects audit vulnerability evidence',()=>assert.throws(()=>closePair(a=>a.audits[1].metadata.vulnerabilities.high=1),/Audit count/));
+test('closure rejects archive metadata mismatch',()=>assert.throws(()=>closePair(a=>a.pack[0].integrity=integrity),/integrity metadata mismatch/));
+test('closure rejects different archive checksums across consumers',()=>assert.throws(()=>closePair((a,b)=>b.summary.archive_sha256='3'.repeat(64)),/Cross-consumer mismatch/));
+test('closure rejects different distribution bytes across consumers',()=>assert.throws(()=>closePair((a,b)=>b.summary.dist_hashes['index.js']='3'.repeat(64)),/Cross-consumer mismatch/));
+test('closure rejects incorrect distribution inventory',()=>assert.throws(()=>closePair(a=>{delete a.summary.dist_hashes['index.d.ts'];a.summary.dist_hashes['fake.d.ts']='3'.repeat(64);}),/inventory/i));
+test('closure loader rejects missing status and recorded failure',()=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),'closure-test-'));try{assert.throws(()=>loadClosure(dir));fs.writeFileSync(path.join(dir,'browser-failure.json'),'{}');assert.throws(()=>loadClosure(dir),/Failure evidence/);}finally{fs.rmSync(dir,{recursive:true,force:true});}});
