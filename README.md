@@ -1,6 +1,6 @@
 # MicroWeb Laravel Tiptap Editor
 
-Reusable Tiptap rich-text editor for Laravel 12 + React + TypeScript applications.
+Reusable Tiptap rich-text editor for Laravel 12 or 13 + React + TypeScript applications.
 
 The package has two parts:
 
@@ -9,11 +9,11 @@ The package has two parts:
 
 ## Requirements
 
-- PHP 8.2+
-- Laravel 12
-- Node.js 20.19+
+- PHP 8.2+ for Laravel 12; PHP 8.3+ for Laravel 13 (subject to Laravel and dependency platform requirements)
+- Laravel 12 or 13
+- Node.js ^22.20.0, ^24.12.0 or ^26.0.0; npm >=10
 - React 18.2+ or React 19
-- Tiptap 3
+- Tiptap 3 (peer dependencies ^3.32.0)
 
 ## Installation
 
@@ -76,7 +76,7 @@ By default, the frontend uploads images to:
 POST /tiptap-editor/media
 ```
 
-The package route uses Laravel's `web` middleware.
+The built-in upload route uses the package configuration. Verify authentication, authorization and CSRF middleware in your host before exposing the route. Do not expose the upload route anonymously.
 
 When using the built-in upload endpoint, ensure the host page provides a CSRF token:
 
@@ -288,6 +288,10 @@ Each search result should use the public news-block shape:
 }
 ```
 
+## Visual and Code modes
+
+Raw source edits are local until committed by switching back to Visual mode. Commit the source draft before saving through the host. The backend must still sanitize and authorize all submitted content.
+
 ## Public JavaScript API
 
 ```ts
@@ -316,10 +320,10 @@ Internal toolbar, dialog and NodeView components are intentionally not part of t
 
 ## Development
 
-Install frontend dependencies:
+Install frontend dependencies from the committed lockfile:
 
 ```bash
-npm install
+npm ci --engine-strict --strict-peer-deps
 ```
 
 Type-check:
@@ -337,7 +341,7 @@ npm run build
 Create an npm release archive for consumer testing:
 
 ```bash
-npm pack
+npm run pack:verified
 ```
 
 For local consumer testing, prefer installing the generated `.tgz` archive rather than installing the package directory directly. This avoids duplicate React instances during local linked-package development.
@@ -350,7 +354,7 @@ Before tagging `v1.0.0`:
 - `composer dump-autoload`
 - `npm run typecheck`
 - `npm run build`
-- `npm pack`
+- `npm run pack:verified` and `npm run check:archive -- <report-directory>`
 - inspect the npm tarball contents
 - install the `.tgz` into a separate Laravel + React consumer app
 - verify text formatting and links
@@ -365,8 +369,10 @@ Before tagging `v1.0.0`:
 - verify `tiptap-editor:cleanup`
 - verify `php artisan schedule:list`
 - verify `php artisan route:list --name=tiptap-editor.media`
-- tag the Composer release
-- publish the npm package
+- verify all PHP, Node and React CI lanes and F.9 acceptance on the final commit
+- compare the actual release tarball with the React-tested archive digest
+- confirm the version is unused and review the source and packed source map for secrets
+- tag the Composer release and publish only the verified npm tarball
 
 ## License
 

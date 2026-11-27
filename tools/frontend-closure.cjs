@@ -4,6 +4,7 @@ const fs=require('node:fs'), path=require('node:path'), os=require('node:os'), a
 const {execFileSync}=require('node:child_process');
 const {verifyPair,load}=require('./formatting-closure.cjs');
 const {sha}=require('./consumer-contract.cjs');
+const PHP_JOBS=["Discover compatibility matrix", "Required compatibility gate", "Required / laravel-12-php-82-latest", "Required / laravel-12-php-83-latest", "Required / laravel-12-php-84-latest", "Required / laravel-12-php-85-latest", "Required / laravel-13-php-83-latest", "Required / laravel-13-php-84-latest", "Required / laravel-13-php-85-latest", "Lower-bound probe / laravel-12-php-82-lowest", "Lower-bound probe / laravel-13-php-83-lowest"];
 const NODE_JOBS=['ubuntu-24.04','windows-2025'].flatMap(os=>['22','24','26'].map(n=>`Build / ${os} / Node ${n}`)).concat('Required Node build compatibility gate');
 const REACT_JOBS=['Consumer / React 18','Consumer / React 19','Required React consumer compatibility gate'];
 const positive=v=>/^[1-9]\d*$/.test(String(v));
@@ -21,7 +22,7 @@ function verifyRun(run,jobs,expected){
     const names=jobs.jobs.map(j=>j.name);assert.equal(new Set(names).size,names.length,'Duplicate job names');
     for(const j of jobs.jobs){assert.equal(String(j.run_id),id,'Job run mismatch');assert.equal(j.head_sha,commit,'Job commit mismatch');assert.equal(j.status,'completed','Job not completed: '+j.name);assert.equal(j.conclusion,'success','Job not successful: '+j.name);}
     if(kind==='node'||kind==='react')assert.deepEqual([...names].sort(),[...(kind==='node'?NODE_JOBS:REACT_JOBS)].sort(),'Required job inventory mismatch: '+kind);
-    else {assert.equal(kind,'php');const gates=names.filter(n=>/gate/i.test(n));const lanes=names.filter(n=>!/gate/i.test(n));assert.equal(lanes.length,9,'Expected nine PHP matrix jobs; inspect workflow job names');assert.ok(gates.length>=1,'Expected PHP compatibility gate');}
+    else {assert.equal(kind,'php');assert.deepEqual([...names].sort(),[...PHP_JOBS].sort(),'Required PHP job inventory mismatch (including discovery and gate)');}
     return {kind,id,attempt:String(run.run_attempt),file,commit,jobNames:names.sort(),url:run.html_url};
 }
 function verifyHostedPair(computed,hosted,reactRun){
@@ -59,9 +60,9 @@ function main(){
         verifyHostedPair(pair,JSON.parse(fs.readFileSync(path.join(p,'react-pair.json'),'utf8')),rr);
         assert.deepEqual(runs,[runInfo('php',phpId,phpPath),runInfo('node',nodeId,'.github/workflows/editor-node-build.yml'),runInfo('react',reactId,'.github/workflows/editor-react-consumer.yml')],'Workflow changed during verification; rerun closure');
         assert.equal(git('rev-parse','HEAD'),commit);assert.equal(git('status','--porcelain','--untracked-files=normal'),'');
-        const report={schema:1,status:'frontend-ci-evidence-verified',commit,repository:repo,version:baseline.manifest.version,verifiedAt:new Date().toISOString(),runs,react:pair,limitations:['PHP job count and gate naming checked; reviewer must confirm seven latest and two lowest lane names.','Node and PHP job conclusions checked; their artifact contents are not independently replayed.','React report consistency, not execution attestation.','Manual QA and local regression acceptance remain separate.','No publication or MWT integration performed.']};
+        const report={schema:1,status:'frontend-ci-evidence-verified',commit,repository:repo,version:baseline.manifest.version,verifiedAt:new Date().toISOString(),runs,react:pair,limitations:['Exact PHP inventory checked: seven latest, two lowest, discovery and gate.','Node and PHP job conclusions checked; their artifact contents are not independently replayed.','React report consistency, not execution attestation.','Manual QA and local regression acceptance remain separate.','No publication or MWT integration performed.']};
         fs.writeFileSync(dest,JSON.stringify(report,null,2)+'\n',{flag:'wx'});console.log(JSON.stringify(report,null,2));
     }finally{fs.rmSync(temp,{recursive:true,force:true});}
 }
-module.exports={verifyRun,verifyHostedPair,validateInputs,NODE_JOBS,REACT_JOBS};
+module.exports={verifyRun,verifyHostedPair,validateInputs,PHP_JOBS,NODE_JOBS,REACT_JOBS};
 if(require.main===module){try{main();}catch(e){console.error('STOP: '+e.message);process.exitCode=1;}}
