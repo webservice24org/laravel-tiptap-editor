@@ -11,8 +11,16 @@ export async function runLinksTypography(page, editor) {
     const url=page.locator('#mw-link-url'), textField=page.locator('#mw-link-text')
     async function reset(html,text) {
         const before=Number(await page.locator('#format-generation').textContent())
-        await page.locator('#format-source').fill(html);await page.locator('#format-reset').click()
-        await page.waitForFunction(({before,text})=>Number(document.querySelector('#format-generation')?.textContent)===before+1&&document.querySelector('.mw-tiptap-content[contenteditable="true"]')?.textContent===text&&document.querySelector('#changes')?.textContent==='0',{before,text})
+        // This is host fixture setup, not an editor interaction. Stage and commit
+        // the uncontrolled input in one browser task, without competing focus events.
+        await page.locator('#format-source').evaluate((input,source)=>{
+            const resetButton=document.querySelector('#format-reset')
+            if(!(input instanceof HTMLInputElement)||!(resetButton instanceof HTMLButtonElement))throw Error('Formatting fixture controls missing')
+            input.value=source
+            if(input.value!==source)throw Error('Formatting fixture source was not staged exactly')
+            resetButton.click()
+        },html)
+        await page.waitForFunction(({before,text,html})=>Number(document.querySelector('#format-generation')?.textContent)===before+1&&document.querySelector('#format-source')?.value===html&&document.querySelector('#html')?.textContent===html&&document.querySelector('.mw-tiptap-content[contenteditable="true"]')?.textContent===text&&document.querySelector('#changes')?.textContent==='0',{before,text,html})
         await editor.waitFor({state:'visible'})
     }
     async function openLink(){await button('Insert or Edit Link').click();await dialog.waitFor({state:'visible'});await url.waitFor({state:'visible'});await page.waitForFunction(()=>{const b=document.querySelector('.mw-dialog-button-primary');return b&&!b.disabled})}
@@ -40,7 +48,7 @@ export async function runLinksTypography(page, editor) {
         },expected)
     }
     async function change(name,value){await toolbar.getByRole('combobox',{name,exact:true}).selectOption(value)}
-    async function check(name,fn){try{await fn();checks.push(name);console.log('Link/typography passed: '+name)}catch(e){try{console.error('Link/typography diagnostics: '+JSON.stringify(await page.evaluate(()=>({html:document.querySelector('.mw-tiptap-content')?.innerHTML,saved:document.querySelector('#html')?.textContent,changes:document.querySelector('#changes')?.textContent,selection:getSelection()?.toString(),focus:document.activeElement?.outerHTML.slice(0,300),dialog:document.querySelector('.mw-dialog')?.innerText,selects:[...document.querySelectorAll('select')].map(s=>({label:s.getAttribute('aria-label'),value:s.value,disabled:s.disabled}))}))))}catch{}throw Error('Link/typography failed: '+name+' — '+e.message,{cause:e})}}
+    async function check(name,fn){try{await fn();checks.push(name);console.log('Link/typography passed: '+name)}catch(e){try{console.error('Link/typography diagnostics: '+JSON.stringify(await page.evaluate(()=>({fixtureSource:document.querySelector('#format-source')?.value,generation:document.querySelector('#format-generation')?.textContent,html:document.querySelector('.mw-tiptap-content')?.innerHTML,saved:document.querySelector('#html')?.textContent,changes:document.querySelector('#changes')?.textContent,selection:getSelection()?.toString(),focus:document.activeElement?.outerHTML.slice(0,300),dialog:document.querySelector('.mw-dialog')?.innerText,selects:[...document.querySelectorAll('select')].map(s=>({label:s.getAttribute('aria-label'),value:s.value,disabled:s.disabled}))}))))}catch{}throw Error('Link/typography failed: '+name+' — '+e.message,{cause:e})}}
     await check('selected link insertion and editing',async()=>{
         await reset('<p><strong>Link target</strong></p>','Link target');await selectBlocks(editor,'p','p',true);await openLink()
         assert.equal(await textField.inputValue(),'Link target');assert.equal(await textField.getAttribute('readonly'),'');await url.fill('example.com');await submit('Insert');await contentState({text:'Link target',href:'https://example.com/',linkText:'Link target',bold:'Link target',blank:true})

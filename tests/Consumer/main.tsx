@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import DefaultEditor, { TiptapEditor, sanitizeEditorHtml, createEditorExtensions, type TiptapEditorProps } from '@microweb/laravel-tiptap-editor'
 import '@microweb/laravel-tiptap-editor/editor.css'
@@ -18,7 +18,8 @@ const uploadFixture = async (file: File) => {
 function App() {
     const [value, setValue] = useState('<p>Consumer smoke</p>')
     const [changes, setChanges] = useState(0)
-    const [fixtureHtml, setFixtureHtml] = useState('<p>Format target</p>')
+    // Fixture input is deliberately uncontrolled: reset consumes its current DOM value.
+    const fixtureSource = useRef<HTMLInputElement>(null)
     const [generation, setGeneration] = useState(0)
     const [uploadMode, setUploadMode] = useState('default')
     const [mode, setMode] = useState<'named'|'default'|'hidden'>('named')
@@ -38,8 +39,11 @@ function App() {
         <button id="hide" onClick={()=>setMode('hidden')}>Unmount editor</button>
         <button id="show-default" onClick={()=>setMode('default')}>Mount default editor</button>
         <label htmlFor="format-source">Formatting test source</label>
-        <input id="format-source" value={fixtureHtml} onChange={event=>setFixtureHtml(event.target.value)} />
-        <button id="format-reset" onClick={()=>{setValue(fixtureHtml);setChanges(0);setMode('named');setGeneration(n=>n+1)}}>Reset formatting fixture</button>
+        <input id="format-source" ref={fixtureSource} defaultValue="<p>Format target</p>" />
+        <button id="format-reset" onClick={()=>{
+            if (!fixtureSource.current) throw new Error('Formatting fixture input missing')
+            setValue(fixtureSource.current.value);setChanges(0);setMode('named');setGeneration(n=>n+1)
+        }}>Reset formatting fixture</button>
         <label htmlFor="history-host-input">Independent host history input</label>
         <input id="history-host-input" defaultValue="Host" />
         <output id="format-generation">{generation}</output>
