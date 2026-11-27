@@ -350,7 +350,7 @@ For local consumer testing, prefer installing the generated `.tgz` archive rathe
 
 MicroWeb Laravel Tiptap Editor v1.0.0 running in a Laravel 13 and React 19 application, with English and Bengali content.
 
-![MicroWeb Laravel Tiptap Editor v1.0.0](docs/images/editor-v1.0.0.png)
+![MicroWeb Laravel Tiptap Editor v1.0.0](src/images/editor-v1.0.0.png)
 
 ## Release checklist
 
