@@ -22,7 +22,29 @@ export async function runSynchronization(page) {
     async function stable(before){await frames();assert.deepEqual(await state(),before,'Selection-only interaction changed primary document')}
     async function pressed(locator,value){await locator.waitFor({state:'visible'});await page.waitForFunction(({title,value})=>document.querySelector(`#primary-editor .mw-table-toolbar button[title="${title}"]`)?.getAttribute('aria-pressed')===String(value),{title:await locator.getAttribute('title'),value})}
     async function availability(locator,enabled){await locator.waitFor({state:'visible'});await page.waitForFunction(({label,enabled})=>{const b=[...document.querySelectorAll('#primary-editor .mw-table-toolbar button')].find(b=>b.textContent.trim()===label);return b&&b.disabled===!enabled},{label:(await locator.textContent()).trim(),enabled})}
-    async function check(name,fn){try{await fn();checks.push(name);console.log('Synchronization passed: '+name)}catch(error){console.error('Synchronization diagnostics: '+JSON.stringify(await page.evaluate(()=>({live:document.querySelector('#primary-editor .mw-tiptap-content')?.innerHTML,saved:document.querySelector('#html')?.textContent,changes:document.querySelector('#changes')?.textContent,secondary:document.querySelector('#secondary-editor .mw-tiptap-content')?.innerHTML,secondarySaved:document.querySelector('#secondary-html')?.textContent,selection:getSelection()?.toString(),focus:document.activeElement?.outerHTML.slice(0,400),controls:[...document.querySelectorAll('.mw-tiptap-editor button')].map(b=>({label:b.getAttribute('aria-label')||b.title||b.textContent.trim(),pressed:b.getAttribute('aria-pressed'),disabled:b.disabled}))})).catch(()=>null)));throw Error('Synchronization failed: '+name,{cause:error})}}
+    async function restoredContext(){
+        await frames()
+        const context=await editor.evaluate(root=>{
+            const selection=root.ownerDocument.getSelection()
+            const element=node=>node?.nodeType===1?node:node?.parentElement
+            const anchor=element(selection?.anchorNode),focus=element(selection?.focusNode)
+            if(!selection||selection.rangeCount!==1||!anchor||!focus||!root.contains(anchor)||!root.contains(focus)||root.ownerDocument.activeElement!==root)return null
+            const cell=anchor.closest('td,th'),focusCell=focus.closest('td,th')
+            if(cell!==focusCell)return null
+            return cell?{inTable:true,cell:cell.textContent,alignment:cell.style.textAlign}:{inTable:false}
+        })
+        assert.ok(context,'Undo must restore a valid focused selection in the primary editor')
+        if(context.inTable){
+            assert.ok(['First','Second'].includes(context.cell),'Unexpected restored cell')
+            assert.equal(context.alignment,context.cell==='First'?'left':'right','Restored cell alignment differs')
+            await table.waitFor({state:'visible'});await mainButton('Align Left').waitFor({state:'hidden'})
+            for(const alignment of ['left','center','right','justify'])await pressed(table.locator(`button[title="${alignment==='justify'?'Justify cell text':'Align cell '+alignment}"]`),alignment===context.alignment)
+        }else{
+            await table.waitFor({state:'hidden'});await mainButton('Align Left').waitFor({state:'visible'})
+        }
+        console.log('Undo restored selection context: '+JSON.stringify(context))
+    }
+    async function check(name,fn){try{await fn();checks.push(name);console.log('Synchronization passed: '+name)}catch(error){console.error('Synchronization diagnostics: '+JSON.stringify(await page.evaluate(()=>({live:document.querySelector('#primary-editor .mw-tiptap-content')?.innerHTML,saved:document.querySelector('#html')?.textContent,changes:document.querySelector('#changes')?.textContent,secondary:document.querySelector('#secondary-editor .mw-tiptap-content')?.innerHTML,secondarySaved:document.querySelector('#secondary-html')?.textContent,selection:getSelection()?.toString(),selectionEndpoints:[getSelection()?.anchorNode,getSelection()?.focusNode].map((n,i)=>({node:n?.nodeName,parent:n?.parentElement?.outerHTML.slice(0,250),offset:i===0?getSelection()?.anchorOffset:getSelection()?.focusOffset})),focus:document.activeElement?.outerHTML.slice(0,400),controls:[...document.querySelectorAll('.mw-tiptap-editor button')].map(b=>({label:b.getAttribute('aria-label')||b.title||b.textContent.trim(),pressed:b.getAttribute('aria-pressed'),disabled:b.disabled}))})).catch(()=>null)));throw Error('Synchronization failed: '+name,{cause:error})}}
     await check('table context transitions',async()=>{
         await reset(fixture,'BeforeFirstSecondAfter');await selectBlocks(editor,'p');await table.waitFor({state:'hidden'});await mainButton('Align Left').waitFor({state:'visible'});const before=await state()
         await selectBlocks(editor,'td:first-child p');await table.waitFor({state:'visible'});await mainButton('Align Left').waitFor({state:'hidden'});await stable(before)
@@ -45,8 +67,16 @@ export async function runSynchronization(page) {
         await reset(fixture,'BeforeFirstSecondAfter');await selectBlocks(editor,'td:first-child p');const left=table.locator('button[title="Align cell left"]'),center=table.locator('button[title="Align cell center"]');await pressed(left,true)
         await center.click();await pressed(center,true);await pressed(left,false)
         await page.waitForFunction(()=>{const live=document.querySelector('#primary-editor .mw-tiptap-content'),saved=new DOMParser().parseFromString(document.querySelector('#html')?.textContent??'','text/html').body;return [live,saved].every(root=>root?.querySelector('td:first-child')?.style.textAlign==='center'&&root.querySelector('td:last-child')?.style.textAlign==='right'&&root.textContent==='BeforeFirstSecondAfter')})
-        await mainButton('Undo').click();await pressed(left,true);await pressed(center,false)
+        await mainButton('Undo').click()
         await page.waitForFunction(()=>{const live=document.querySelector('#primary-editor .mw-tiptap-content'),saved=new DOMParser().parseFromString(document.querySelector('#html')?.textContent??'','text/html').body;return [live,saved].every(root=>root?.querySelector('td:first-child')?.style.textAlign==='left'&&root.querySelector('td:last-child')?.style.textAlign==='right'&&root.textContent==='BeforeFirstSecondAfter')})
+        await restoredContext()
+        assert.equal(await mainButton('Undo').isDisabled(),true,'Undo should exhaust the single formatting event')
+        assert.equal(await mainButton('Redo').isEnabled(),true,'Redo should be available after Undo')
+        const undone=await state()
+        await selectBlocks(editor,'td:first-child p');await pressed(left,true);await pressed(center,false);await pressed(table.locator('button[title="Align cell right"]'),false);await stable(undone)
+        await selectBlocks(editor,'td:last-child p');await pressed(left,false);await pressed(center,false);await pressed(table.locator('button[title="Align cell right"]'),true);await stable(undone)
+        assert.equal(await mainButton('Undo').isDisabled(),true,'Reselection must not create history')
+        assert.equal(await mainButton('Redo').isEnabled(),true,'Reselection must not clear redo')
     })
     await check('independent editor state and history',async()=>{
         await reset('<p><strong>Primary</strong></p>','Primary');await selectBlocks(editor,'p');const before=await state()
