@@ -12,6 +12,7 @@ import { runLinksTypography } from './links-typography.mjs'
 import { runHistory } from './history.mjs'
 import { runSynchronization } from './synchronization.mjs'
 import { runMedia, serveMedia } from './media.mjs'
+import { runRichBlocks, isFixtureVideoRequest } from './rich-blocks.mjs'
 const [expected,report] = process.argv.slice(2)
 assert.match(expected,/^(18|19)\.\d+\.\d+$/)
 assert.ok(report)
@@ -52,7 +53,7 @@ try {
         if(m.type()==='error'&&!expected422)errors.push(m.text());if(m.type()==='warning')warnings.push(m.text())
     })
     page.on('response',r=>{if(r.status()>=400&&!(r.status()===422&&r.url()===origin+'/__media/reject'))errors.push(`${r.status()} ${r.url()}`)})
-    await page.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){unexpected.push(route.request().url());return route.abort()}return route.continue()})
+    await page.route('**/*',route=>{if(isFixtureVideoRequest(route.request(),page))return route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><p>Synthetic video fixture</p>'});if(new URL(route.request().url()).origin!==origin){unexpected.push(route.request().url());return route.abort()}return route.continue()})
     await page.goto(origin,{waitUntil:'load'})
     const editor=page.locator('.mw-tiptap-content[contenteditable="true"]')
     await editor.waitFor({state:'visible',timeout:15000})
@@ -75,10 +76,11 @@ try {
     const history=await suite('history',()=>runHistory(page,editor))
     const synchronization=await suite('synchronization',()=>runSynchronization(page))
     const media=await suite('media',()=>runMedia(page,origin,mediaRequests))
+    const richBlocks=await suite('richBlocks',()=>runRichBlocks(page))
     stage='final-evidence'
     assert.deepEqual(errors,[],'Browser errors');assert.deepEqual(unexpected,[],'Unexpected network requests')
     completed.smoke={status:'passed',checks:[...EXPECTED.smoke]}
-    const summary={schema:1,status:'passed',react:expected,chromium:browser.version(),checks:completed.smoke.checks,formatting,blocks,lists,linksTypography,history,synchronization,media,warnings,errors,unexpected,totalChecks:TOTAL,timingsMs}
+    const summary={schema:1,status:'passed',react:expected,chromium:browser.version(),checks:completed.smoke.checks,formatting,blocks,lists,linksTypography,history,synchronization,media,richBlocks,warnings,errors,unexpected,totalChecks:TOTAL,timingsMs}
     verifyBrowserEvidence(summary,expected)
     write(report,summary)
     console.log('Browser consumer smoke passed: React '+expected)

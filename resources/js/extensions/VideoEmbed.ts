@@ -10,6 +10,8 @@ import {
 import VideoEmbedView
     from '../components/nodeviews/VideoEmbedView'
 
+import { normalizeVideoEmbedUrl } from '../utils/video'
+
 export type VideoProvider =
     | 'youtube'
     | 'vimeo'
@@ -133,7 +135,7 @@ const VideoEmbed =
                                     'iframe'
                                 )
 
-                            if (!iframe) {
+                            if (!iframe || !normalizeVideoEmbedUrl(iframe.getAttribute('src') ?? '')) {
                                 return false
                             }
 
@@ -150,10 +152,7 @@ const VideoEmbed =
                                     '',
 
                                 provider:
-                                    element.getAttribute(
-                                        'data-provider'
-                                    ) ??
-                                    'youtube',
+                                    new URL(normalizeVideoEmbedUrl(iframe.getAttribute('src') ?? '')).hostname === 'player.vimeo.com' ? 'vimeo' : 'youtube',
 
                                 caption:
                                     caption
@@ -310,6 +309,9 @@ const VideoEmbed =
                     ({
                         commands,
                     }) => {
+                        const src = normalizeVideoEmbedUrl(options.src)
+                        if (!src) return false
+                        const provider = new URL(src).hostname === 'player.vimeo.com' ? 'vimeo' : 'youtube'
                         return commands.insertContent(
                             {
                                 type:
@@ -317,10 +319,10 @@ const VideoEmbed =
 
                                 attrs: {
                                     src:
-                                        options.src,
+                                        src,
 
                                     provider:
-                                        options.provider,
+                                        provider,
 
                                     caption:
                                         options.caption ??

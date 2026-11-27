@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify'
+import { normalizeVideoEmbedUrl } from './video'
 
 const SAFE_DATA_ATTRIBUTES = [
     'data-align',
@@ -91,14 +92,6 @@ const ALLOWED_ATTR = [
     ...SAFE_DATA_ATTRIBUTES,
 ] as const
 
-const SAFE_IFRAME_HOSTS = new Set([
-    'www.youtube.com',
-    'youtube.com',
-    'www.youtube-nocookie.com',
-    'youtube-nocookie.com',
-    'player.vimeo.com',
-])
-
 // Link policy is deliberately narrower than media URL normalization.
 // Only explicit web URLs, same-site root paths and fragments are persisted.
 export function normalizeLinkUrl(value: string, allowBareHost = false): string {
@@ -132,50 +125,6 @@ export const TEXT_PRESETS = {
 export type TextPresetProperty = keyof typeof TEXT_PRESETS
 export function isTextPreset(property: TextPresetProperty, value: string): boolean {
     return (TEXT_PRESETS[property] as readonly string[]).includes(value)
-}
-
-const safeUrl = (
-    value: string,
-    allowRelative = true
-) => {
-    const url =
-        value.trim()
-
-    if (!url) {
-        return ''
-    }
-
-    if (
-        allowRelative &&
-        (
-            url.startsWith('/') ||
-            url.startsWith('#')
-        )
-    ) {
-        return url
-    }
-
-    try {
-        const parsed =
-            new URL(
-                /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(
-                    url
-                )
-                    ? url
-                    : `https://${url}`
-            )
-
-        if (
-            parsed.protocol !== 'http:' &&
-            parsed.protocol !== 'https:'
-        ) {
-            return ''
-        }
-
-        return parsed.toString()
-    } catch {
-        return ''
-    }
 }
 
 const sanitizeStyle = (
@@ -308,64 +257,26 @@ DOMPurify.addHook(
             return
         }
 
-        if (
-            name === 'src'
-        ) {
-            const element =
-                node as Element
-
-            if (
-                element.tagName
-                    .toLowerCase() ===
-                'iframe'
-            ) {
-                const safe =
-                    safeUrl(
-                        value,
-                        false
-                    )
-
-                if (!safe) {
-                    data.keepAttr = false
-                    return
-                }
-
-                try {
-                    const parsed =
-                        new URL(
-                            safe
-                        )
-
-                    if (
-                        !SAFE_IFRAME_HOSTS.has(
-                            parsed.hostname
-                        )
-                    ) {
-                        data.keepAttr = false
-                        return
-                    }
-
-                    data.attrValue =
-                        safe
-                } catch {
-                    data.keepAttr = false
-                }
-
-                return
-            }
-
-            const safe = element.tagName.toLowerCase() === 'img'
-                ? normalizeImageSource(value)
-                : safeUrl(value, true)
-
-            if (!safe) {
-                data.keepAttr = false
-                return
-            }
-
-            data.attrValue =
-                safe
-
+        const tag = node.nodeName.toLowerCase()
+        if (name === 'data-url' || name === 'data-thumbnail') {
+            if (tag !== 'article') { data.keepAttr = false; return }
+            const safe = name === 'data-url' ? normalizeLinkUrl(value) : normalizeImageSource(value)
+            // An empty explicit value must not resurrect an unsafe metadata URL.
+            data.attrValue = safe
+            return
+        }
+        if (name === 'rowspan' || name === 'colspan') {
+            if (!['td', 'th'].includes(tag) || !/^[1-9][0-9]{0,3}$/.test(value) || Number(value) > 1000) data.keepAttr = false
+            return
+        }
+        if (name === 'colwidth' || name === 'data-colwidth') {
+            if (!['td', 'th'].includes(tag) || value.length > 1024 || !/^[0-9]{1,5}(?:,[0-9]{1,5})*$/.test(value)) data.keepAttr = false
+            return
+        }
+        if (name === 'src') {
+            const safe = tag === 'iframe' ? normalizeVideoEmbedUrl(value) : tag === 'img' ? normalizeImageSource(value) : ''
+            if (!safe) data.keepAttr = false
+            else data.attrValue = safe
             return
         }
 

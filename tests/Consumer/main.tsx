@@ -16,6 +16,8 @@ const uploadFixture = async (file: File) => {
 }
 
 function App() {
+    const sanitizerInput = useRef<HTMLInputElement>(null)
+    const [sanitized, setSanitized] = useState('')
     const [value, setValue] = useState('<p>Consumer smoke</p>')
     const [changes, setChanges] = useState(0)
     // Fixture input is deliberately uncontrolled: reset consumes its current DOM value.
@@ -30,6 +32,10 @@ function App() {
         imageUploadUrl: uploadMode==='alternate' ? '/__media/upload' : uploadMode==='invalid' ? '/__media/invalid' : uploadMode==='reject' ? '/__media/reject' : uploadMode==='cross' ? 'https://example.invalid/upload' : undefined,
         onImageUpload: uploadMode==='callback' ? uploadFixture : undefined}
     return <main>
+        <label htmlFor="rich-sanitize-source">Rich block sanitizer fixture</label>
+        <input id="rich-sanitize-source" ref={sanitizerInput} />
+        <button id="rich-sanitize" onClick={()=>setSanitized(sanitizeEditorHtml(sanitizerInput.current?.value ?? ''))}>Sanitize fixture</button>
+        <output id="rich-sanitized">{sanitized}</output>
         <label htmlFor="upload-mode">Image upload fixture</label>
         <select id="upload-mode" value={uploadMode} onChange={event=>setUploadMode(event.target.value)}>
             {['default','alternate','invalid','reject','cross','callback'].map(mode=><option key={mode} value={mode}>{mode}</option>)}

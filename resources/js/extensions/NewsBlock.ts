@@ -14,6 +14,8 @@ import type {
     NewsBlockStyle,
 } from '../types/newsBlock'
 
+import { normalizeLinkUrl, normalizeImageSource } from '../utils/sanitizeHtml'
+
 export interface InsertNewsBlockOptions {
     newsId?: string | number
     title: string
@@ -111,7 +113,7 @@ const NewsBlock =
                         (
                             element
                         ) =>
-                            element.getAttribute(
+                            normalizeLinkUrl(element.getAttribute(
                                 'data-url'
                             ) ??
                             element
@@ -121,7 +123,7 @@ const NewsBlock =
                                 ?.getAttribute(
                                     'href'
                                 ) ??
-                            '',
+                            ''),
                 },
 
                 thumbnail: {
@@ -132,7 +134,7 @@ const NewsBlock =
                         (
                             element
                         ) =>
-                            element.getAttribute(
+                            normalizeImageSource(element.getAttribute(
                                 'data-thumbnail'
                             ) ??
                             element
@@ -142,7 +144,7 @@ const NewsBlock =
                                 ?.getAttribute(
                                     'src'
                                 ) ??
-                            '',
+                            ''),
                 },
 
                 category: {
@@ -241,17 +243,9 @@ const NewsBlock =
                     ''
                 )
 
-            const safeUrl =
-                String(
-                    url ??
-                    ''
-                )
+            const safeUrl = normalizeLinkUrl(String(url ?? ''))
 
-            const safeThumbnail =
-                String(
-                    thumbnail ??
-                    ''
-                )
+            const safeThumbnail = normalizeImageSource(String(thumbnail ?? ''))
 
             const safeCategory =
                 String(
@@ -457,11 +451,10 @@ const NewsBlock =
                                         options.title,
 
                                     url:
-                                        options.url,
+                                        normalizeLinkUrl(options.url),
 
                                     thumbnail:
-                                        options.thumbnail ??
-                                        '',
+                                        normalizeImageSource(options.thumbnail ?? ''),
 
                                     category:
                                         options.category ??

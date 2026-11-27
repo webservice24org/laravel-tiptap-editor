@@ -11,6 +11,8 @@ import type {
 import Dialog
     from './Dialog'
 
+import { normalizeLinkUrl, normalizeImageSource } from '../../utils/sanitizeHtml'
+
 import type {
     NewsBlockData,
     NewsBlockStyle,
@@ -27,48 +29,6 @@ interface NewsBlockDialogProps {
         data: NewsBlockData
     ) => void
     onNewsSearch?: NewsSearchHandler
-}
-
-const normalizeUrl = (
-    value: string
-) => {
-    const url =
-        value.trim()
-
-    if (!url) {
-        return ''
-    }
-
-    if (
-        url.startsWith('/') ||
-        url.startsWith('#')
-    ) {
-        return url
-    }
-
-    try {
-        const parsed =
-            new URL(
-                /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(
-                    url
-                )
-                    ? url
-                    : `https://${url}`
-            )
-
-        if (
-            parsed.protocol !==
-                'http:' &&
-            parsed.protocol !==
-                'https:'
-        ) {
-            return ''
-        }
-
-        return parsed.toString()
-    } catch {
-        return ''
-    }
 }
 
 export default function NewsBlockDialog({
@@ -339,15 +299,11 @@ export default function NewsBlockDialog({
             title.trim()
 
         const safeUrl =
-            normalizeUrl(
-                url
-            )
+            normalizeLinkUrl(url.trim(), true)
 
         const safeThumbnail =
             thumbnail.trim()
-                ? normalizeUrl(
-                      thumbnail
-                  )
+                ? normalizeImageSource(normalizeLinkUrl(thumbnail.trim(), true))
                 : ''
 
         if (!safeTitle) {
@@ -545,11 +501,11 @@ export default function NewsBlockDialog({
                                                 )
                                             }
                                         >
-                                            {result.thumbnail && (
+                                            {typeof result.thumbnail === 'string' && normalizeImageSource(result.thumbnail) && (
                                                 <span className="mw-news-search-thumb">
                                                     <img
                                                         src={
-                                                            result.thumbnail
+                                                            normalizeImageSource(result.thumbnail)
                                                         }
                                                         alt=""
                                                         loading="lazy"

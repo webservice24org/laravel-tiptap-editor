@@ -41,7 +41,7 @@ function main(){
         const filename=packInventory(pack,dist), archive=path.join(work,'editor.tgz');fs.renameSync(path.join(work,filename),archive);
         const archiveBytes=read(archive);assert.equal(pack[0].integrity,'sha512-'+require('node:crypto').createHash('sha512').update(archiveBytes).digest('base64'));
         json(path.join(work,'package.json'),p.manifest);json(path.join(report,'consumer-manifest.json'),p.manifest);
-        for(const name of ['index.html','main.tsx','browser.mjs','formatting.mjs','blocks.mjs','lists.mjs','links-typography.mjs','history.mjs','synchronization.mjs','media.mjs'])fs.copyFileSync(path.join(root,'tests/Consumer',name),path.join(work,name));
+        for(const name of ['index.html','main.tsx','browser.mjs','formatting.mjs','blocks.mjs','lists.mjs','links-typography.mjs','history.mjs','synchronization.mjs','media.mjs','rich-blocks.mjs'])fs.copyFileSync(path.join(root,'tests/Consumer',name),path.join(work,name));
         fs.copyFileSync(path.join(root,'tools/browser-evidence.cjs'),path.join(work,'browser-evidence.cjs'));
         fs.copyFileSync(path.join(root,'tests/TypeScript/public-api.tsx'),path.join(work,'public-api.tsx'));
         const config={compilerOptions:{target:'ES2022',lib:['ES2022','DOM','DOM.Iterable'],module:'ESNext',moduleResolution:'Bundler',jsx:'react-jsx',strict:true,noEmit:true,noEmitOnError:true,skipLibCheck:false,types:['vite/client'],esModuleInterop:true,forceConsistentCasingInFileNames:true,noUncheckedSideEffectImports:true},files:['main.tsx','public-api.tsx'],include:['node_modules/@microweb/laravel-tiptap-editor/dist/**/*.d.ts']};
