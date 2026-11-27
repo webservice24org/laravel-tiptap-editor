@@ -21,13 +21,20 @@ function load(dir) {
     for(const name of ['browser-failure.json','browser-failure.png'])assert.ok(!fs.existsSync(path.join(dir,name)),'Failure evidence present: '+name);
     return {summary:json('consumer-summary.json'),browser:json('browser-summary.json'),run:json('run-status.json'),lockBytes:readEvidence(dir,'consumer-lock.json'),manifest:json('consumer-manifest.json'),pack:json('pack.json'),audits:[json('audit-all.json'),json('audit-runtime.json')],tree:json('installed-tree.json')};
 }
-function verifyLane(e, lane, commit, baseline) {
+function verifyLane(e, lane, commit, baseline, provenance) {
     assert.ok(['18','19'].includes(lane));assert.match(commit,/^[a-f0-9]{40}$/,'Full hosted commit SHA required');
     const s=e.summary,r=e.run,p=plan(lane,baseline.manifest,baseline.lock);
     assert.equal(s.status,'passed');assert.equal(s.lane,lane);assert.equal(s.commit,commit,'Consumer commit mismatch');
     assert.equal(s.platform,'linux','Expected hosted Linux consumer evidence');
     assert.equal(s.major,24);validateRuntime(s.node,s.npm,'24');
     assert.deepEqual(s.editor,baseline.hashes,'Editor manifest/lock mismatch');
+    if(provenance){
+        for(const [key,value] of Object.entries(provenance)){
+            assert.match(value,/^[1-9]\d*$/,'Invalid expected '+key);
+            assert.equal(s[key],value,'Consumer '+key+' mismatch');
+            assert.equal(r[key],value,'Run status '+key+' mismatch');
+        }
+    }
     assert.equal(r.schema,1);assert.equal(r.status,'passed');assert.equal(r.stage,'complete');assert.equal(r.lane,lane);assert.equal(r.commit,commit,'Run status commit mismatch');
     assert.deepEqual(r.completedCommands,COMMANDS,'Incomplete hosted command ledger');assert.equal(r.browserChecks,TOTAL);
     assert.ok(Number.isFinite(r.elapsedMs)&&r.elapsedMs>=0,'Invalid run duration');
@@ -49,17 +56,19 @@ function verifyLane(e, lane, commit, baseline) {
     assert.equal(lock.packages['node_modules/'+NAME].resolved,'file:editor.tgz');assert.equal(lock.packages['node_modules/'+NAME].integrity,pkg.integrity,'Archive integrity metadata mismatch');
     return {lane,commit,react:p.expected.react,checks:TOTAL,archive_sha256:s.archive_sha256,integrity:pkg.integrity,dist_hashes:s.dist_hashes,warnings:e.browser.warnings};
 }
-function verifyPair(a,b,commit,baseline){
-    const lanes=[verifyLane(a,'18',commit,baseline),verifyLane(b,'19',commit,baseline)];
+function verifyPair(a,b,commit,baseline,provenance){
+    if(provenance)assert.deepEqual(Object.keys(provenance).sort(),['runAttempt','runId'],'Incomplete provenance');
+    const lanes=[verifyLane(a,'18',commit,baseline,provenance),verifyLane(b,'19',commit,baseline,provenance)];
     for(const field of ['archive_sha256','integrity','dist_hashes'])assert.deepEqual(lanes[0][field],lanes[1][field],'Cross-consumer mismatch: '+field);
-    return {status:'react-evidence-consistent',commit,browserChecks:TOTAL*2,lanes:lanes.map(({lane,react,checks,warnings})=>({lane,react,checks,warnings})),archive_sha256:lanes[0].archive_sha256,distributionFiles:39,limitations:'Offline report consistency only; archive bytes not supplied. Verify PHP, Node and React workflow success separately on the same commit.'};
+    return {status:'react-evidence-consistent',commit,...(provenance||{}),browserChecks:TOTAL*2,lanes:lanes.map(({lane,react,checks,warnings})=>({lane,react,checks,warnings})),archive_sha256:lanes[0].archive_sha256,distributionFiles:39,limitations:'Offline report consistency only; archive bytes not supplied. Verify PHP, Node and React workflow success separately on the same commit.'};
 }
 function main(){
-    const [commit,react18,react19,...rest]=process.argv.slice(2);assert.ok(commit&&react18&&react19&&!rest.length,'Usage: node tools/formatting-closure.cjs <full-commit-sha> <React18-extracted-dir> <React19-extracted-dir>');
+    const [commit,react18,react19,...rest]=process.argv.slice(2);assert.ok(commit&&react18&&react19&&[0,2].includes(rest.length),'Usage: node tools/formatting-closure.cjs <full-commit-sha> <React18-extracted-dir> <React19-extracted-dir> [run-id run-attempt]');
+    const provenance=rest.length?{runId:rest[0],runAttempt:rest[1]}:undefined;
     assert.notEqual(fs.realpathSync(react18),fs.realpathSync(react19),'Provide two independent artifacts');
     const root=path.resolve(__dirname,'..');const manifest=normalize(fs.readFileSync(path.join(root,'package.json'))),lock=normalize(fs.readFileSync(path.join(root,'package-lock.json')));
     const baseline={manifest:JSON.parse(manifest),lock:JSON.parse(lock),hashes:{'package.json':sha(manifest),'package-lock.json':sha(lock)}};
-    console.log(JSON.stringify(verifyPair(load(react18),load(react19),commit,baseline),null,2));
+    console.log(JSON.stringify(verifyPair(load(react18),load(react19),commit,baseline,provenance),null,2));
 }
 module.exports={COMMANDS,DIST_NAMES,verifyLane,verifyPair,load};
 if(require.main===module){try{main();}catch(e){console.error('STOP: '+e.message);process.exitCode=1;}}

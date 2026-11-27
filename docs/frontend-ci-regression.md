@@ -1,0 +1,9 @@
+# 11.2F.8 — Frontend automated testing and CI
+
+No editor runtime, PHP, npm dependencies or public API changes. Preserve all 119 ordered browser groups per React lane and the 39-file distribution. Contract suite adds four synthetic provenance tests (56 total). Laravel and Node workflow definitions are unchanged.
+
+The required React gate still fails unless both matrix jobs succeed. It then downloads the exact two current-attempt artifacts, uses the existing offline closure verifier with commit, run ID and attempt, and uploads `react-pair-attempt-N` containing `react-pair.json`. The verifier checks existing ordered inventories, audits, command ledger, lock and package metadata, and cross-consumer dist and archive hashes. The paired summary is consistency evidence, not cryptographic attestation or a replacement for PHP/Node CI. The v8 download action is SHA-pinned and rejects artifact digest mismatch. Same-workflow downloads require no extra token or write permissions.
+
+If a workflow preflight fails before runner status is created, the failure-only step records a synthetic diagnostic status; inspect the original failed step for the actual error. No retry or skip is introduced. If one job fails, use **Re-run all jobs**, not re-run failed jobs: partial reruns intentionally cannot mix attempts. Never use old F7 artifacts for hosted F8 acceptance. The three-argument offline verifier remains available for older reports but does not check run provenance; always use five arguments for F8 acceptance.
+
+Local: npm run test:consumer:contract; npm run test:toolbar; npm run check:toolbar; npm run typecheck; npm run build; npm run test:consumer -- 18; npm run test:consumer -- 19. Hosted: both React lanes (119 each), paired gate (238 total), six Node lanes, nine Laravel lanes on the same commit. Confirm fresh pair artifact and keep it for F9.

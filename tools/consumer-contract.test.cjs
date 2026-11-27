@@ -83,3 +83,15 @@ test('reject reordered source security evidence',()=>{const r=browserFixture();r
 
 test('reject missing responsive evidence',()=>{const r=browserFixture();delete r.responsive;assert.throws(()=>verifyBrowserEvidence(r,r.react),/responsive/);});
 test('reject reordered responsive evidence',()=>{const r=browserFixture();r.responsive.checks.reverse();assert.throws(()=>verifyBrowserEvidence(r,r.react),/responsive/);});
+
+// F8 hosted provenance: synthetic fixtures only.
+const hosted={runId:'123456789',runAttempt:'2'};
+function hostedPair(mutate=()=>{},expected=hosted){
+    const a=closureFixture('18'),b=closureFixture('19');
+    for(const e of [a,b]){Object.assign(e.summary,hosted);Object.assign(e.run,hosted);}
+    mutate(a,b);return verifyPair(a,b,closureCommit,closureBaseline,expected);
+}
+test('F8 accepts matched hosted run and attempt',()=>{const r=hostedPair();assert.equal(r.runId,hosted.runId);assert.equal(r.runAttempt,hosted.runAttempt);assert.equal(r.browserChecks,238);});
+test('F8 rejects stale or missing run IDs',()=>{assert.throws(()=>hostedPair(a=>a.summary.runId='123'),/runId mismatch/);assert.throws(()=>hostedPair((a,b)=>delete b.run.runId),/runId mismatch/);});
+test('F8 rejects mixed or missing attempts',()=>{assert.throws(()=>hostedPair((a,b)=>b.summary.runAttempt='1'),/runAttempt mismatch/);assert.throws(()=>hostedPair(a=>delete a.run.runAttempt),/runAttempt mismatch/);});
+test('F8 rejects malformed expected provenance',()=>{assert.throws(()=>hostedPair(()=>{},{runId:'123'}),/Incomplete provenance/);assert.throws(()=>hostedPair(()=>{},{runId:'0',runAttempt:'1'}),/Invalid expected/);assert.throws(()=>hostedPair(()=>{},{runId:hosted.runId,runAttempt:'x'}),/Invalid expected/);});

@@ -19,6 +19,7 @@ function main(){
     else report=fs.mkdtempSync(path.join(temp,'Tiptap-F2E-React'+major+'-evidence-'));
     console.log('Evidence: '+report);
     const work=fs.mkdtempSync(path.join(temp,'Tiptap-F2E-React'+major+'-work-'));outside(work);
+    const provenance={runId:process.env.GITHUB_RUN_ID||null,runAttempt:process.env.GITHUB_RUN_ATTEMPT||null};
     const before=Object.fromEntries(['package.json','package-lock.json'].map(n=>[n,sha(read(path.join(root,n)))]));
     const env={...process.env,PLAYWRIGHT_BROWSERS_PATH:path.join(work,'browsers'),PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD:'1'};
     // Do not allow inherited npm flags to silently skip required peer/engine checks or change the install mode.
@@ -34,6 +35,7 @@ function main(){
         const output=jsonOutput?JSON.parse(result.stdout):result.stdout;completedCommands.push(label);return output;
     }
     try{
+        if(process.env.GITHUB_ACTIONS==='true'){assert.match(provenance.runId,/^[1-9]\d*$/,'Missing hosted run ID');assert.match(provenance.runAttempt,/^[1-9]\d*$/,'Missing hosted run attempt');}
         const manifest=readJson(path.join(root,'package.json')),lock=readJson(path.join(root,'package-lock.json')),p=plan(major,manifest,lock);
         run('library-types',['run','check:types']);run('library-bundle',['run','check:bundle']);
         const dist=inventory(path.join(root,'dist'));assert.equal(dist.length,39,'Expected verified 39-file distribution');
@@ -67,10 +69,10 @@ function main(){
         stage='final-integrity';
         assert.equal(sha(read(lockPath)),lockHash,'Consumer lock changed');
         for(const [n,h] of Object.entries(before))assert.equal(sha(read(path.join(root,n))),h,'Editor baseline modified: '+n);
-        json(path.join(report,'consumer-summary.json'),{status:'passed',lane:major,...runtime,platform:process.platform,commit:process.env.GITHUB_SHA||null,editor:before,archive_sha256:sha(archiveBytes),consumer_lock_sha256:lockHash,...verified,audits:'clean',browser});
-        json(path.join(report,'run-status.json'),{schema:1,status:'passed',lane:major,commit:process.env.GITHUB_SHA||null,stage:'complete',completedCommands,browserChecks,elapsedMs:Date.now()-started});
+        json(path.join(report,'consumer-summary.json'),{status:'passed',lane:major,...runtime,platform:process.platform,commit:process.env.GITHUB_SHA||null,...provenance,editor:before,archive_sha256:sha(archiveBytes),consumer_lock_sha256:lockHash,...verified,audits:'clean',browser});
+        json(path.join(report,'run-status.json'),{schema:1,status:'passed',lane:major,commit:process.env.GITHUB_SHA||null,...provenance,stage:'complete',completedCommands,browserChecks,elapsedMs:Date.now()-started});
         console.log('React '+major+' consumer compatibility PASSED. Evidence: '+report);
-    }catch(e){try{json(path.join(report,'run-status.json'),{schema:1,status:'failed',lane:major,commit:process.env.GITHUB_SHA||null,stage,category:stageCategory(stage),completedCommands,error:String(e.message||e).slice(0,4000),elapsedMs:Date.now()-started});}catch(writeError){console.error('Status evidence write failed: '+writeError.message);}
+    }catch(e){try{json(path.join(report,'run-status.json'),{schema:1,status:'failed',lane:major,commit:process.env.GITHUB_SHA||null,...provenance,stage,category:stageCategory(stage),completedCommands,error:String(e.message||e).slice(0,4000),elapsedMs:Date.now()-started});}catch(writeError){console.error('Status evidence write failed: '+writeError.message);}
         console.error('Consumer work retained for diagnosis: '+work+'; evidence: '+report);throw e;}
     fs.rmSync(work,{recursive:true,force:true});
 }
