@@ -16,7 +16,7 @@ const dropdown='components/toolbar/FormatDropdown.tsx';
 const table='components/toolbar/TableContextualToolbar.tsx';
 const mutation=fn=>{const clone=structuredClone(actual);fn(clone);return clone;};
 test('accepted source inventory matches review record',()=>verify(actual,expected));
-test('inventory counts all three toolbar surfaces',()=>assert.deepEqual(totals(actual),{controls:55,options:23,command_chains:46,source_files:15}));
+test('inventory counts all three toolbar surfaces',()=>assert.deepEqual(totals(actual),{controls:55,options:23,command_chains:36,source_files:15}));
 test('extract named button and exact handler',()=>{const [c]=controls('const a=<EditorButton tooltip="Bold" onClick={()=>editor.chain().focus().toggleBold().run()} />');assert.equal(c.label,'Bold');assert.match(c.handler,/toggleBold/);});
 test('capture active and disabled expressions',()=>{const [c]=controls('const a=<EditorButton tooltip="Undo" active={false} disabled={!editor.can().undo()} onClick={undo}/>');assert.equal(c.active,'false');assert.equal(c.disabled,'!editor.can().undo()');});
 test('capture nested rendering conditions',()=>{const [c]=controls('const a=mode === "visual" && (!inside && <button aria-label="Align" onClick={align}/>);');assert.deepEqual(c.conditions,['mode === "visual"','!inside']);});
@@ -194,3 +194,23 @@ test('unfocused native history events are consumed before plugin dispatch',()=>{
 test('focused native history remains available',()=>{for(const type of ['historyUndo','historyRedo'])assert.deepEqual(nativeHistoryEvent(type,true),{handled:false,calls:0,prevented:false})});
 test('other input events are untouched in both focus states',()=>{for(const type of ['insertText','insertCompositionText','deleteContentBackward',undefined])for(const focus of [true,false])assert.deepEqual(nativeHistoryEvent(type,focus),{handled:false,calls:0,prevented:false})});
 test('noncancelable unfocused history stops plugin handling without promising native cancellation',()=>{assert.deepEqual(nativeHistoryEvent('historyUndo',false,false),{handled:true,calls:1,prevented:false});assert.ok(actual.files['components/TiptapEditor.tsx'].subscriptions.some(s=>s.includes('beforeinput: guardUnfocusedHistory')))});
+
+
+// F3G: capability probes are non-dispatching; actions recheck at invocation.
+const tableActions=["addRowBefore", "addRowAfter", "deleteRow", "addColumnBefore", "addColumnAfter", "deleteColumn", "mergeCells", "splitCell", "toggleHeaderRow", "toggleHeaderColumn", "toggleHeaderCell", "deleteTable"];
+const tableHelpers=actual.files[table].helpers.filter(h=>['canEditTable','canTableAction','applyTableAction'].includes(h.name));
+const tableContext=vm.createContext({});vm.runInContext(ts.transpileModule(tableHelpers.map(h=>h.expression).join('\n'),{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText,tableContext);
+function tableFixture({editable=true,destroyed=false,inside=true,allowed=true}={}){
+    const calls=[],chain={focus(){calls.push('focus');return this},run(){calls.push('run');return true}},caps={};
+    for(const name of tableActions){caps[name]=()=>{calls.push('can:'+name);return allowed};chain[name]=()=>{calls.push(name);return chain}};
+    const editor={isEditable:editable,isDestroyed:destroyed,isActive(name){assert.equal(name,'table');return inside},can(){return caps},chain(){calls.push('chain');return chain}};
+    return {calls,can:name=>tableContext.canTableAction(editor,name),apply:name=>tableContext.applyTableAction(editor,name)};
+}
+test('all structural table controls subscribe to capability and recheck on action',()=>{const source=actual.files[table];for(const name of tableActions){const c=source.controls.find(c=>c.handler.includes("applyTableAction(editor, '"+name+"')"));assert.ok(c,name);assert.equal(c.disabled,'!tableState.'+name);assert.match(c.mouseDown,/preventDefault/);assert.ok(source.subscriptions.some(s=>s.includes("canTableAction(currentEditor, '"+name+"')")))}});
+test('table capability probes do not focus or dispatch',()=>{for(const name of tableActions){const f=tableFixture();assert.equal(f.can(name),true);assert.deepEqual(f.calls,['can:'+name])}});
+test('allowed table action probes then executes one focused chain',()=>{for(const name of tableActions){const f=tableFixture();assert.equal(f.apply(name),true);assert.deepEqual(f.calls,['can:'+name,'chain','focus',name,'run'])}});
+test('unavailable table actions do not execute',()=>{for(const name of tableActions){const f=tableFixture({allowed:false});assert.equal(f.apply(name),false);assert.deepEqual(f.calls,['can:'+name])}});
+test('outside-table read-only and destroyed contexts never probe commands',()=>{for(const opts of [{inside:false},{editable:false},{destroyed:true}]){const f=tableFixture(opts);for(const name of tableActions)assert.equal(f.apply(name),false);assert.deepEqual(f.calls,[])}});
+test('all seven cell alignment indicators expose explicit pressed and disabled state',()=>{const cells=actual.files[table].controls.filter(c=>c.pressed!==null);assert.equal(cells.length,7);for(const c of cells){assert.match(c.pressed,/tableState\.(textAlign|verticalAlign) ===/);assert.equal(c.disabled,'!tableState.canEdit');assert.match(c.mouseDown,/preventDefault/)}});
+test('native table color inputs remain interactive without mouse cancellation',()=>{const c=actual.files[table].controls.filter(c=>c.kind==='input');assert.equal(c.length,2);for(const control of c){assert.equal(control.mouseDown,null);assert.equal(control.disabled,'!tableState.canEdit')}});
+test('main formatting click rechecks native availability and insert buttons preserve selection',()=>{const c=actual.files[main].controls;for(const [label,cmd] of [['Bold','toggleBold'],['Italic','toggleItalic'],['Underline','toggleUnderline'],['Strike','toggleStrike'],['Blockquote','toggleBlockquote'],['Horizontal Rule','setHorizontalRule']]){const h=c.find(x=>x.label===label).handler;assert.ok(h.includes('editor.can().'+cmd+'()'));assert.ok(h.includes('!editor.isDestroyed && editor.isEditable'))}for(const label of ['Add image','Add video','Insert table','Insert news block'])assert.match(c.find(x=>x.label===label).mouseDown,/preventDefault/);assert.match(actual.files[main].helpers.find(h=>h.name==='clearFormatting').expression,/editor.isDestroyed/)});

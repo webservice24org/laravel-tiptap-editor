@@ -15,6 +15,9 @@ function App() {
     const [fixtureHtml, setFixtureHtml] = useState('<p>Format target</p>')
     const [generation, setGeneration] = useState(0)
     const [mode, setMode] = useState<'named'|'default'|'hidden'>('named')
+    const [secondaryOpen, setSecondaryOpen] = useState(false)
+    const [secondaryValue, setSecondaryValue] = useState('<p>Other editor</p>')
+    const [secondaryChanges, setSecondaryChanges] = useState(0)
     const props: TiptapEditorProps = {value, minHeight: 240, onChange: html => {setValue(html);setChanges(c=>c+1)}}
     return <main>
         <div id="react-version">{React.version}</div>
@@ -28,7 +31,14 @@ function App() {
         <input id="history-host-input" defaultValue="Host" />
         <output id="format-generation">{generation}</output>
         <output id="changes">{changes}</output><pre id="html">{value}</pre>
-        {mode==='named' ? <TiptapEditor key={`named-${generation}`} {...props}/> : mode==='default' ? <DefaultEditor key={`default-${generation}`} {...props}/> : null}
+        <section id="primary-editor">
+            {mode==='named' ? <TiptapEditor key={`named-${generation}`} {...props}/> : mode==='default' ? <DefaultEditor key={`default-${generation}`} {...props}/> : null}
+        </section>
+        <button id="toggle-secondary" onClick={()=>setSecondaryOpen(open=>!open)}>Toggle independent editor</button>
+        {secondaryOpen && <section id="secondary-editor">
+            <output id="secondary-changes">{secondaryChanges}</output><pre id="secondary-html">{secondaryValue}</pre>
+            <TiptapEditor value={secondaryValue} minHeight={240} onChange={html=>{setSecondaryValue(html);setSecondaryChanges(n=>n+1)}} />
+        </section>}
     </main>
 }
 createRoot(document.getElementById('root')!).render(<App/>)

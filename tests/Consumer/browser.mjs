@@ -8,6 +8,7 @@ import { runBlocks } from './blocks.mjs'
 import { runLists } from './lists.mjs'
 import { runLinksTypography } from './links-typography.mjs'
 import { runHistory } from './history.mjs'
+import { runSynchronization } from './synchronization.mjs'
 const [expected,report] = process.argv.slice(2)
 assert.match(expected,/^(18|19)\.\d+\.\d+$/)
 assert.ok(report)
@@ -49,8 +50,9 @@ try {
     const lists=await runLists(page,editor)
     const linksTypography=await runLinksTypography(page,editor)
     const history=await runHistory(page,editor)
+    const synchronization=await runSynchronization(page)
     assert.deepEqual(errors,[],'Browser errors');assert.deepEqual(unexpected,[],'Unexpected network requests')
-    fs.writeFileSync(report,JSON.stringify({status:'passed',react:expected,chromium:browser.version(),checks:['named mount','React version','CSS applied','minHeight','edit callback','unmount','default remount','sanitizer and extension factory','no page errors or remote requests'],formatting,blocks,lists,linksTypography,history,warnings},null,2)+'\n',{flag:'wx'})
+    fs.writeFileSync(report,JSON.stringify({status:'passed',react:expected,chromium:browser.version(),checks:['named mount','React version','CSS applied','minHeight','edit callback','unmount','default remount','sanitizer and extension factory','no page errors or remote requests'],formatting,blocks,lists,linksTypography,history,synchronization,warnings},null,2)+'\n',{flag:'wx'})
     console.log('Browser consumer smoke passed: React '+expected)
 } finally {
     try {if(browser)await browser.close()} finally {await new Promise(resolve=>server.close(resolve))}

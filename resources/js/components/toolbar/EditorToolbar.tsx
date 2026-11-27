@@ -169,6 +169,7 @@ export default function EditorToolbar({
     onNewsSearch,
 }: EditorToolbarProps) {
     const clearFormatting = () => {
+        if (editor.isDestroyed || !editor.isEditable || !editor.can().chain().clearNodes().unsetAllMarks().run()) return
         editor
             .chain()
             .focus()
@@ -265,6 +266,7 @@ export default function EditorToolbar({
                     type="button"
                     className="mw-tiptap-action-button"
                     onClick={() => setImageDialogOpen(true)}
+                    onMouseDown={event => event.preventDefault()}
                     aria-label="Add image"
                     title="Add image"
                 >
@@ -276,6 +278,7 @@ export default function EditorToolbar({
                     type="button"
                     className="mw-tiptap-action-button"
                     onClick={() => setVideoDialogOpen(true)}
+                    onMouseDown={event => event.preventDefault()}
                     aria-label="Add video"
                     title="Add video"
                 >
@@ -287,6 +290,7 @@ export default function EditorToolbar({
                     type="button"
                     className="mw-tiptap-action-button"
                     onClick={() => setTableDialogOpen(true)}
+                    onMouseDown={event => event.preventDefault()}
                     aria-label="Insert table"
                     title="Insert table"
                 >
@@ -302,6 +306,7 @@ export default function EditorToolbar({
                             true
                         )
                     }
+                    onMouseDown={event => event.preventDefault()}
                     aria-label="Insert news block"
                     title="Insert news block"
                 >
@@ -378,13 +383,11 @@ export default function EditorToolbar({
                         disabled={!formatting.canBold}
                         onMouseDown={event => event.preventDefault()}
                         tooltip="Bold"
-                        onClick={() =>
-                            editor
-                                .chain()
-                                .focus()
-                                .toggleBold()
-                                .run()
-                        }
+                        onClick={() => {
+                            if (!editor.isDestroyed && editor.isEditable && editor.can().toggleBold()) {
+                                editor.chain().focus().toggleBold().run()
+                            }
+                        }}
                     >
                         <BoldIcon />
                     </EditorButton>
@@ -394,13 +397,11 @@ export default function EditorToolbar({
                         disabled={!formatting.canItalic}
                         onMouseDown={event => event.preventDefault()}
                         tooltip="Italic"
-                        onClick={() =>
-                            editor
-                                .chain()
-                                .focus()
-                                .toggleItalic()
-                                .run()
-                        }
+                        onClick={() => {
+                            if (!editor.isDestroyed && editor.isEditable && editor.can().toggleItalic()) {
+                                editor.chain().focus().toggleItalic().run()
+                            }
+                        }}
                     >
                         <ItalicIcon />
                     </EditorButton>
@@ -410,13 +411,11 @@ export default function EditorToolbar({
                         disabled={!formatting.canUnderline}
                         onMouseDown={event => event.preventDefault()}
                         tooltip="Underline"
-                        onClick={() =>
-                            editor
-                                .chain()
-                                .focus()
-                                .toggleUnderline()
-                                .run()
-                        }
+                        onClick={() => {
+                            if (!editor.isDestroyed && editor.isEditable && editor.can().toggleUnderline()) {
+                                editor.chain().focus().toggleUnderline().run()
+                            }
+                        }}
                     >
                         <UnderlineIcon />
                     </EditorButton>
@@ -426,13 +425,11 @@ export default function EditorToolbar({
                         disabled={!formatting.canStrike}
                         onMouseDown={event => event.preventDefault()}
                         tooltip="Strike"
-                        onClick={() =>
-                            editor
-                                .chain()
-                                .focus()
-                                .toggleStrike()
-                                .run()
-                        }
+                        onClick={() => {
+                            if (!editor.isDestroyed && editor.isEditable && editor.can().toggleStrike()) {
+                                editor.chain().focus().toggleStrike().run()
+                            }
+                        }}
                     >
                         <StrikeIcon />
                     </EditorButton>
@@ -618,13 +615,11 @@ export default function EditorToolbar({
                         disabled={!formatting.canBlockquote}
                         onMouseDown={event => event.preventDefault()}
                         tooltip="Blockquote"
-                        onClick={() =>
-                            editor
-                                .chain()
-                                .focus()
-                                .toggleBlockquote()
-                                .run()
-                        }
+                        onClick={() => {
+                            if (!editor.isDestroyed && editor.isEditable && editor.can().toggleBlockquote()) {
+                                editor.chain().focus().toggleBlockquote().run()
+                            }
+                        }}
                     >
                         <QuoteIcon />
                     </EditorButton>
@@ -633,13 +628,11 @@ export default function EditorToolbar({
                         tooltip="Horizontal Rule"
                         disabled={!formatting.canHorizontalRule}
                         onMouseDown={event => event.preventDefault()}
-                        onClick={() =>
-                            editor
-                                .chain()
-                                .focus()
-                                .setHorizontalRule()
-                                .run()
-                        }
+                        onClick={() => {
+                            if (!editor.isDestroyed && editor.isEditable && editor.can().setHorizontalRule()) {
+                                editor.chain().focus().setHorizontalRule().run()
+                            }
+                        }}
                     >
                         <HorizontalRuleIcon />
                     </EditorButton>
