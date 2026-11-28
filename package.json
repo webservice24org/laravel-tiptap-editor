@@ -1,6 +1,6 @@
 {
     "name": "@webservice24org/laravel-tiptap-editor",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Reusable Tiptap rich text editor for Laravel and React applications.",
     "license": "MIT",
     "type": "module",

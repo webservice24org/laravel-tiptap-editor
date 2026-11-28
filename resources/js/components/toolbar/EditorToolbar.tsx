@@ -548,36 +548,69 @@ export default function EditorToolbar({
                 <div className="mw-tiptap-toolbar-separator" />
 
                 <ToolbarGroup>
-                    <select className="mw-tiptap-format-select" aria-label="Text color"
-                        value={formatting.textColor} disabled={!formatting.canTextColor}
-                        onChange={event => applyPreset(editor, 'mwTextColor', 'color', event.target.value)}>
-                        <option value="" disabled>Text color / mixed</option>
-                        <option value="default">Default</option>
-                        <option value="black">Black</option>
-                        <option value="red">Red</option>
-                        <option value="blue">Blue</option>
-                        <option value="green">Green</option>
-                        <option value="purple">Purple</option>
-                    </select>
-                    <select className="mw-tiptap-format-select" aria-label="Font size"
-                        value={formatting.fontSize} disabled={!formatting.canFontSize}
-                        onChange={event => applyPreset(editor, 'mwFontSize', 'font-size', event.target.value)}>
-                        <option value="" disabled>Font size / mixed</option>
-                        <option value="default">Default</option>
-                        <option value="12px">12 px</option>
-                        <option value="16px">16 px</option>
-                        <option value="20px">20 px</option>
-                        <option value="24px">24 px</option>
-                    </select>
-                    <select className="mw-tiptap-format-select" aria-label="Font family"
-                        value={formatting.fontFamily} disabled={!formatting.canFontFamily}
-                        onChange={event => applyPreset(editor, 'mwFontFamily', 'font-family', event.target.value)}>
-                        <option value="" disabled>Font family / mixed</option>
-                        <option value="default">Default</option>
-                        <option value="sans-serif">Sans serif</option>
-                        <option value="serif">Serif</option>
-                        <option value="monospace">Monospace</option>
-                    </select>
+                    <span
+                        className="mw-tiptap-preset-control"
+                        title={`Text color: ${formatting.textColor || 'default / mixed'}`}
+                    >
+                        <span className="mw-tiptap-preset-icon" aria-hidden="true">
+                            <span className="mw-tiptap-preset-glyph mw-tiptap-preset-glyph--color" data-color={formatting.textColor}>A</span>
+                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" focusable="false">
+                                <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </span>
+                        <select className="mw-tiptap-format-select" aria-label="Text color"
+                            value={formatting.textColor} disabled={!formatting.canTextColor}
+                            onChange={event => applyPreset(editor, 'mwTextColor', 'color', event.target.value)}>
+                            <option value="" disabled>Text color / mixed</option>
+                            <option value="default">Default</option>
+                            <option value="black">Black</option>
+                            <option value="red">Red</option>
+                            <option value="blue">Blue</option>
+                            <option value="green">Green</option>
+                            <option value="purple">Purple</option>
+                        </select>
+                    </span>
+                    <span
+                        className="mw-tiptap-preset-control"
+                        title={`Font size: ${formatting.fontSize || 'default / mixed'}`}
+                    >
+                        <span className="mw-tiptap-preset-icon" aria-hidden="true">
+                            <span className="mw-tiptap-preset-glyph mw-tiptap-preset-glyph--size">Aa</span>
+                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" focusable="false">
+                                <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </span>
+                        <select className="mw-tiptap-format-select" aria-label="Font size"
+                            value={formatting.fontSize} disabled={!formatting.canFontSize}
+                            onChange={event => applyPreset(editor, 'mwFontSize', 'font-size', event.target.value)}>
+                            <option value="" disabled>Font size / mixed</option>
+                            <option value="default">Default</option>
+                            <option value="12px">12 px</option>
+                            <option value="16px">16 px</option>
+                            <option value="20px">20 px</option>
+                            <option value="24px">24 px</option>
+                        </select>
+                    </span>
+                    <span
+                        className="mw-tiptap-preset-control"
+                        title={`Font family: ${formatting.fontFamily || 'default / mixed'}`}
+                    >
+                        <span className="mw-tiptap-preset-icon" aria-hidden="true">
+                            <span className="mw-tiptap-preset-glyph mw-tiptap-preset-glyph--family">Ff</span>
+                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" focusable="false">
+                                <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </span>
+                        <select className="mw-tiptap-format-select" aria-label="Font family"
+                            value={formatting.fontFamily} disabled={!formatting.canFontFamily}
+                            onChange={event => applyPreset(editor, 'mwFontFamily', 'font-family', event.target.value)}>
+                            <option value="" disabled>Font family / mixed</option>
+                            <option value="default">Default</option>
+                            <option value="sans-serif">Sans serif</option>
+                            <option value="serif">Serif</option>
+                            <option value="monospace">Monospace</option>
+                        </select>
+                    </span>
                 </ToolbarGroup>
 
                 <div className="mw-tiptap-toolbar-separator" />

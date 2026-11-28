@@ -3163,3 +3163,82 @@ figure[data-mw-video][data-wrap="true"] > .mw-tiptap-video-frame {
         max-width: none;
     }
 }
+
+
+/* Compact typography controls. Keep the native select as the actual input:
+ * its popup is not a positioned element clipped by the scrolling toolbar. */
+.mw-tiptap-editor .mw-tiptap-preset-control {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 42px;
+    width: 42px;
+    min-width: 42px;
+    height: 36px;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: inherit;
+}
+.mw-tiptap-preset-control:hover {
+    background: rgba(127, 127, 127, 0.12);
+}
+.mw-tiptap-preset-control:focus-within {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+}
+.mw-tiptap-preset-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    pointer-events: none;
+}
+.mw-tiptap-preset-glyph {
+    display: inline-block;
+    font: 600 15px/1 Arial, Helvetica, sans-serif;
+    white-space: nowrap;
+}
+.mw-tiptap-preset-glyph--family {
+    font-family: Georgia, 'Times New Roman', serif;
+}
+.mw-tiptap-preset-glyph--color {
+    border-bottom: 3px solid currentColor;
+    padding: 0 2px 2px;
+}
+.mw-tiptap-preset-glyph--color[data-color=""] { border-bottom-style: dashed; }
+.mw-tiptap-preset-glyph--color[data-color="black"] { border-bottom-color: #000; }
+.mw-tiptap-preset-glyph--color[data-color="red"] { border-bottom-color: red; }
+.mw-tiptap-preset-glyph--color[data-color="blue"] { border-bottom-color: blue; }
+.mw-tiptap-preset-glyph--color[data-color="green"] { border-bottom-color: green; }
+.mw-tiptap-preset-glyph--color[data-color="purple"] { border-bottom-color: purple; }
+/* Full-sized transparent native input: remains keyboard/touch accessible.
+ * Higher specificity than generic format-select and mobile sizing rules. */
+.mw-tiptap-editor .mw-tiptap-toolbar .mw-tiptap-preset-control > .mw-tiptap-format-select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    opacity: 0;
+    cursor: pointer;
+}
+.mw-tiptap-editor .mw-tiptap-preset-control > select:disabled { cursor: not-allowed; }
+.mw-tiptap-preset-control:has(> select:disabled) { background: transparent; opacity: 0.38; }
+@media (pointer: coarse) {
+    .mw-tiptap-editor .mw-tiptap-preset-control {
+        flex-basis: 44px;
+        width: 44px;
+        min-width: 44px;
+        height: 44px;
+    }
+}
+@media (forced-colors: active) {
+    .mw-tiptap-editor .mw-tiptap-preset-control { border-color: ButtonText; }
+    .mw-tiptap-preset-control:focus-within { outline-color: Highlight; }
+}
