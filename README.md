@@ -380,6 +380,15 @@ Before tagging `v1.0.0`:
 - confirm the version is unused and review the source and packed source map for secrets
 - tag the Composer release and publish only the verified npm tarball
 
+  ## 1.1.0
+
+- Replaced text-heavy typography controls with compact icons for text color, font size and font family.
+- Retained native dropdowns, existing formatting presets, mixed formatting state and accessible labels.
+- Improved toolbar space utilization and responsive touch targets.
+- Preserved keyboard navigation and Visual/Code mode functionality.
+- Maintained Laravel 12/13 and React 18/19 compatibility.
+- No intended backend API or dependency changes.
+
 ## License
 
 MIT
